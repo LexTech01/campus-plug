@@ -45,8 +45,11 @@ class Config:
         if not Config.SECRET_KEY or Config.SECRET_KEY == 'change-me-in-production':
             errors.append('SECRET_KEY is not set. Generate one: python3 -c "import secrets; print(secrets.token_hex(32))"')
         if not Config.PAYSTACK_SECRET_KEY or not Config.PAYSTACK_PUBLIC_KEY:
-            errors.append('PAYSTACK_SECRET_KEY and PAYSTACK_PUBLIC_KEY must be set in .env')
+            errors.append('PAYSTACK_SECRET_KEY and PAYSTACK_PUBLIC_KEY must be set')
         if production:
+            db_url = os.environ.get('DATABASE_URL', '').strip()
+            if not db_url:
+                errors.append('DATABASE_URL is not set')
             import sys
             if errors:
                 print("CRITICAL CONFIGURATION ERRORS:", file=sys.stderr)
@@ -65,7 +68,8 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', '').replace('postgres://', 'postgresql://', 1) if os.environ.get('DATABASE_URL') else ''
+    _db_url = (os.environ.get('DATABASE_URL') or '').strip()
+    SQLALCHEMY_DATABASE_URI = _db_url.replace('postgres://', 'postgresql://', 1) if _db_url else ''
     SESSION_COOKIE_SECURE = True
     WTF_CSRF_ENABLED = True
 
