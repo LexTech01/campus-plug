@@ -75,7 +75,7 @@ class ProductionConfig(Config):
 
     CONTENT_SECURITY_POLICY = {
         'default-src': "'self'",
-        'script-src': "'self' https://cdn.jsdelivr.net https://js.paystack.co 'unsafe-inline'",
+        'script-src': "'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://js.paystack.co https://unpkg.com 'unsafe-inline'",
         'style-src': "'self' https://cdn.tailwindcss.com https://fonts.googleapis.com 'unsafe-inline'",
         'img-src': "'self' data: https:",
         'font-src': "'self' https://fonts.gstatic.com",
