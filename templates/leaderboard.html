@@ -44,7 +44,7 @@
 
         <!-- Seller info -->
         <a href="{{ url_for('auth.user_profile', user_id=entry.seller.id) }}" class="flex items-center gap-3 flex-1 min-w-0 group">
-          <img src="{{ entry.seller.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}"
+          <img src="{{ entry.seller.avatar_url or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}"
                alt="" class="w-10 h-10 rounded-full object-cover border border-[var(--color-border)] group-hover:ring-2 ring-[var(--color-brand)] transition-all">
           <div class="min-w-0">
             <p class="font-display font-bold text-sm text-[var(--text-primary)] truncate group-hover:text-[var(--color-brand)] transition">

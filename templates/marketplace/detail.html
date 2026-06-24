@@ -17,9 +17,16 @@
       <div class="relative w-full aspect-video rounded-3xl overflow-hidden border border-[var(--color-border)] bg-[var(--bg-secondary)] shadow-lg">
         <img id="primary-gallery" src="{{ listing.photo_list[0] }}" alt="product-image" class="w-full h-full object-cover">
         
-        <span class="absolute top-4 left-4 bg-[var(--bg-secondary)] text-[var(--text-primary)] font-mono text-[10px] font-bold px-3 py-1.5 rounded-lg border border-[var(--color-border)] shadow-md">
-          {{ listing.condition }}
-        </span>
+        <div class="absolute top-4 left-4 flex flex-wrap gap-2">
+          <span class="bg-[var(--bg-secondary)] text-[var(--text-primary)] font-mono text-[10px] font-bold px-3 py-1.5 rounded-lg border border-[var(--color-border)] shadow-md">
+            {{ listing.condition }}
+          </span>
+          {% if listing.is_negotiable %}
+          <span class="bg-amber-500/90 text-white font-mono text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-md">
+            Negotiable
+          </span>
+          {% endif %}
+        </div>
       </div>
       
       <!-- Mini Thumbnails if they exist -->
@@ -78,7 +85,7 @@
         
         <div class="h-[1px] bg-[var(--color-border)] mb-6"></div>
 
-        <p class="font-sans text-xs text-[var(--text-secondary)] leading-relaxed mb-6 whitespace-pre-wrap">{{ listing.description }}</p>
+        <p class="font-sans text-xs text-[var(--text-secondary)] leading-relaxed mb-6 whitespace-pre-wrap break-words">{{ listing.description }}</p>
         
         <!-- Delivery/Pickup policy badge -->
         <div class="flex items-center gap-3 bg-[var(--bg-primary)] border border-[var(--color-border)] p-4 rounded-2xl mb-8 shadow-sm">
@@ -97,7 +104,7 @@
         <!-- Seller profile details -->
         <div class="border-t border-[var(--color-border)] pt-6 mb-6">
           <div class="flex items-center gap-3 mb-4">
-            <img src="{{ listing.seller.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}" alt="avatar" class="w-12 h-12 rounded-full object-cover">
+            <img src="{{ listing.seller.avatar_url or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}" alt="avatar" class="w-12 h-12 rounded-full object-cover">
             <div>
               <span class="block text-[8px] font-mono text-[var(--text-secondary)] uppercase">Handled By Campus Seller</span>
               <p class="font-display font-semibold text-sm text-[var(--text-primary)]">
@@ -126,7 +133,7 @@
               </p>
             </div>
             
-            <div class="grid grid-cols-2 gap-3 mt-1">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
               <a href="{{ url_for('marketplace.edit_listing', listing_id=listing.id) }}" class="p-3 rounded-xl border border-[var(--color-border)] hover:bg-[var(--bg-tertiary)] text-center font-sans font-bold text-xs text-[var(--text-primary)] transition-all-smooth">
                 <i data-lucide="edit-3" class="inline w-3.5 h-3.5 mr-1"></i> Edit Item
               </a>
@@ -148,10 +155,17 @@
           <!-- Actions for Buyer/Bidder -->
           <div class="flex flex-col gap-3">
             {% if listing.status == 'active' %}
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <!-- Add to Cart -->
+                <form action="{{ url_for('cart.add_to_cart', listing_id=listing.id) }}" method="POST">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="w-full p-4 rounded-xl border border-[var(--color-border)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] font-sans font-bold text-xs text-center hover:scale-[1.01] active:scale-95 transition-all-smooth flex items-center justify-center gap-1.5 bg-[var(--bg-secondary)]">
+                    <i data-lucide="shopping-cart" class="w-4 h-4 text-amber-500"></i> Add to Cart
+                  </button>
+                </form>
                 <!-- Check out -->
                 <a href="{{ url_for('payments.checkout', listing_id=listing.id) }}" class="p-4 rounded-xl bg-[var(--color-brand)] text-white text-center font-sans font-bold text-xs shadow-md btn-lift flex items-center justify-center gap-1.5">
-                  <i data-lucide="credit-card" class="w-4 h-4"></i> Secure Buy (GHS)
+                  <i data-lucide="credit-card" class="w-4 h-4"></i> Buy Now
                 </a>
                 
                 <!-- Open Direct Chat messaging form overlay -->
@@ -160,6 +174,40 @@
                   <i data-lucide="message-circle" class="w-4 h-4 text-purple-500"></i> Message Seller
                 </button>
               </div>
+
+              {% if listing.is_negotiable %}
+                {% if buyer_offer %}
+                  <!-- Show existing offer status -->
+                  <div class="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5">
+                    <p class="font-sans font-bold text-xs text-amber-400 mb-1">Your Offer: GHS {{ "{:,.2f}".format(buyer_offer.price) }}</p>
+                    <p class="font-mono text-[10px] text-[var(--text-secondary)]">
+                      Status: 
+                      <span class="font-bold 
+                        {% if buyer_offer.status == 'pending' %}text-yellow-400
+                        {% elif buyer_offer.status == 'accepted' %}text-green-400
+                        {% elif buyer_offer.status == 'countered' %}text-blue-400
+                        {% else %}text-red-400{% endif %}">
+                        {{ buyer_offer.status|capitalize }}
+                      </span>
+                      — {{ buyer_offer.created_at.strftime('%d %b %H:%M') }}
+                    </p>
+                    {% if buyer_offer.status == 'accepted' %}
+                    <a href="{{ url_for('payments.checkout', listing_id=listing.id, offer_id=buyer_offer.id) }}" class="mt-2 inline-block w-full py-2.5 rounded-xl bg-green-500 text-white text-center font-sans font-bold text-xs btn-lift">
+                      Buy Now at GHS {{ "{:,.2f}".format(buyer_offer.price) }}
+                    </a>
+                    {% endif %}
+                    {% if buyer_offer.seller_note %}
+                    <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">Seller note: {{ buyer_offer.seller_note }}</p>
+                    {% endif %}
+                  </div>
+                {% else %}
+                  <!-- Make Offer button -->
+                  <button onclick="document.getElementById('offer-modal').classList.remove('hidden')"
+                          class="w-full p-3 rounded-xl border border-amber-500/30 text-amber-400 font-sans font-bold text-xs hover:bg-amber-500/10 transition-all-smooth flex items-center justify-center gap-1.5 bg-[var(--bg-secondary)]">
+                    <i data-lucide="hand-coins" class="w-4 h-4"></i> Make an Offer
+                  </button>
+                {% endif %}
+              {% endif %}
             {% else %}
               <div class="p-4 text-center rounded-2xl bg-orange-500/10 text-orange-500 font-sans font-bold text-sm">
                 This item has been Sold Out
@@ -245,5 +293,99 @@
     </div>
   </div>
 
+  <!-- Make Offer Modal -->
+  <div id="offer-modal" class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm hidden">
+    <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] p-8 max-w-sm w-full rounded-3xl shadow-2xl relative transform transition-all duration-300 scale-100 flex flex-col gap-4">
+      <button onclick="document.getElementById('offer-modal').classList.add('hidden')"
+              class="absolute right-4 top-4 p-2 rounded-full border border-[var(--color-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+
+      <div>
+        <h3 class="font-display font-extrabold text-md text-[var(--text-primary)]">Make an Offer</h3>
+        <p class="font-sans text-[11px] text-[var(--text-secondary)]">Seller listed at <strong>GHS {{ "{:,.2f}".format(listing.price) }}</strong>. Propose your price.</p>
+      </div>
+
+      <form action="{{ url_for('marketplace.make_offer', listing_id=listing.id) }}" method="POST" class="flex flex-col gap-4 mt-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="floating-label-group">
+          <input type="number" name="offer_price" placeholder=" " required step="0.01" min="0.01"
+                 class="bg-[var(--bg-primary)]">
+          <label>Your Offer (GHS)</label>
+        </div>
+        <div class="floating-label-group">
+          <textarea name="offer_message" rows="3" placeholder=" " class="resize-none bg-[var(--bg-primary)]"></textarea>
+          <label>Message to seller (optional)</label>
+        </div>
+        <button type="submit" class="w-full py-3 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs btn-lift">
+          Send Offer
+        </button>
+      </form>
+    </div>
+  </div>
+
 </section>
+
+{% if current_user.is_authenticated and current_user.id == listing.seller_id and offers %}
+<!-- Seller: Pending Offers Panel -->
+<div class="fixed bottom-6 right-6 z-40 max-w-sm w-full sm:max-w-xs" style="bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)); right: calc(1.5rem + env(safe-area-inset-right, 0px));">
+  <div class="bg-[var(--bg-secondary)] border border-amber-500/30 rounded-2xl shadow-2xl overflow-hidden">
+    <div class="px-4 py-3 bg-amber-500/10 border-b border-amber-500/20 flex items-center justify-between">
+      <h4 class="font-display font-bold text-xs text-amber-400 flex items-center gap-1.5">
+        <i data-lucide="hand-coins" class="w-3.5 h-3.5"></i> Offers ({{ offers|length }})
+      </h4>
+      <button onclick="this.parentElement.parentElement.classList.add('hidden')" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+    <div class="max-h-72 overflow-y-auto p-3 flex flex-col gap-2">
+      {% for offer in offers %}
+      <div class="p-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--color-border)]">
+        <div class="flex items-center gap-2 mb-1.5">
+          <img src="{{ offer.buyer.avatar_url or '/static/images/default-avatar.png' }}" class="w-6 h-6 rounded-full object-cover">
+          <span class="font-sans font-bold text-[11px] text-[var(--text-primary)]">{{ offer.buyer.full_name }}</span>
+        </div>
+        <p class="font-mono font-bold text-xs text-amber-400">GHS {{ "{:,.2f}".format(offer.price) }}</p>
+        {% if offer.message %}
+        <p class="font-sans text-[10px] text-[var(--text-secondary)] mt-1 italic">"{{ offer.message }}"</p>
+        {% endif %}
+        <p class="font-mono text-[9px] text-[var(--text-secondary)] mt-1">{{ offer.created_at.strftime('%d %b %H:%M') }}</p>
+
+        {% if offer.status == 'pending' %}
+        <div class="flex flex-col gap-2 mt-2 pt-2 border-t border-[var(--color-border)]">
+          <form action="{{ url_for('marketplace.respond_offer', listing_id=listing.id, offer_id=offer.id) }}" method="POST" class="flex flex-col gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="flex gap-2">
+              <button type="submit" name="action" value="accept" class="flex-1 py-1.5 rounded-lg bg-green-500 text-white text-[10px] font-bold">Accept</button>
+              <button type="submit" name="action" value="decline" class="flex-1 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-[10px] font-bold">Decline</button>
+            </div>
+            <div class="flex gap-2 items-center">
+              <input type="number" name="counter_price" placeholder="Counter GHS" step="0.01" min="0.01"
+                     class="flex-1 text-[10px] px-2 py-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--bg-primary)] outline-none focus:border-[var(--color-brand)] w-0 min-w-0">
+              <button type="submit" name="action" value="counter" class="flex-shrink-0 py-1.5 px-3 rounded-lg bg-blue-500 text-white text-[10px] font-bold">Counter</button>
+            </div>
+            <input type="text" name="seller_note" placeholder="Note to buyer (optional)" maxlength="200"
+                   class="text-[10px] px-2 py-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--bg-primary)] outline-none focus:border-[var(--color-brand)]">
+          </form>
+        </div>
+        {% else %}
+        <div class="mt-1.5">
+          <span class="text-[9px] font-mono font-bold
+            {% if offer.status == 'accepted' %}text-green-400
+            {% elif offer.status == 'countered' %}text-blue-400
+            {% else %}text-red-400{% endif %}">
+            {{ offer.status|capitalize }}
+          </span>
+          {% if offer.seller_note %}
+          <p class="text-[9px] text-[var(--text-secondary)] italic">Note: {{ offer.seller_note }}</p>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
 {% endblock %}

@@ -91,6 +91,7 @@ class User(db.Model, UserMixin):
     referred_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     completed_referral_count = db.Column(db.Integer, default=0)
     pending_fee_waivers = db.Column(db.Integer, default=0)
+    last_seen = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -108,6 +109,27 @@ class User(db.Model, UserMixin):
         
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    @property
+    def is_online(self):
+        if not self.last_seen:
+            return False
+        return (datetime.utcnow() - self.last_seen).total_seconds() < 300
+
+    @property
+    def avatar_url(self):
+        if self.avatar:
+            if '?' not in self.avatar:
+                try:
+                    import os
+                    path = self.avatar.lstrip('/')
+                    full = os.path.join(os.getcwd(), path)
+                    mtime = int(os.path.getmtime(full)) if os.path.exists(full) else 0
+                    return f"{self.avatar}?v={mtime}"
+                except Exception:
+                    pass
+            return self.avatar
+        return None
 
     @property
     def average_rating(self):
@@ -132,6 +154,7 @@ class Listing(db.Model):
     condition = db.Column(db.String(50), nullable=False)  # Brand New, Neatly Used, Used, Good
     university = db.Column(db.String(100), nullable=False, index=True) # Seller university
     delivery_policy = db.Column(db.String(50), nullable=False, default='Campus Pickup Only')
+    is_negotiable = db.Column(db.Boolean, default=False)
     quantity = db.Column(db.Integer, default=1)
     photos = db.Column(db.Text, nullable=True)  # Comma-separated list of image paths
     status = db.Column(db.String(20), default='active', index=True)  # active, sold, deleted
@@ -212,6 +235,42 @@ class Proposal(db.Model):
     gig = db.relationship('Gig', back_populates='proposals')
     freelancer = db.relationship('User', back_populates='proposals')
 
+class Offer(db.Model):
+    __tablename__ = 'offers'
+
+    id = db.Column(db.Integer, primary_key=True)
+    listing_id = db.Column(db.Integer, db.ForeignKey('listings.id'), nullable=False, index=True)
+    buyer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    price = db.Column(db.Float, nullable=False)
+    message = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default='pending')  # pending, accepted, countered, declined
+    seller_note = db.Column(db.Text, nullable=True)  # seller's counter/response note
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    listing = db.relationship('Listing', backref=db.backref('offers', cascade='all, delete-orphan'))
+    buyer = db.relationship('User', backref=db.backref('offers', cascade='all, delete-orphan'))
+
+class CartItem(db.Model):
+    __tablename__ = 'cart_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    buyer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    listing_id = db.Column(db.Integer, db.ForeignKey('listings.id'), nullable=False, index=True)
+    quantity = db.Column(db.Integer, default=1, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    buyer = db.relationship('User', backref=db.backref('cart_items', cascade='all, delete-orphan'))
+    listing = db.relationship('Listing')
+
+    __table_args__ = (
+        db.UniqueConstraint('buyer_id', 'listing_id', name='uq_buyer_listing_cart'),
+    )
+
+    @property
+    def total_price(self):
+        return self.listing.price * self.quantity
+
 class Message(db.Model):
     __tablename__ = 'messages'
     
@@ -259,6 +318,8 @@ class Transaction(db.Model):
     
     paystack_reference = db.Column(db.String(100), unique=True, nullable=True)
     paystack_transfer_code = db.Column(db.String(100), nullable=True)
+
+    bulk_items = db.Column(db.JSON, nullable=True)  # [{"listing_id": N, "title": "...", "price": N, "quantity": N}, ...]
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     paid_at = db.Column(db.DateTime, nullable=True)

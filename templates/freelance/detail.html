@@ -74,7 +74,7 @@
       <!-- Client Context Details -->
       <div class="border-t border-[var(--color-border)] pt-6 mt-4">
         <div class="flex items-center gap-3 mb-1">
-          <img src="{{ gig.client.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}" alt="client-av" class="w-12 h-12 rounded-full object-cover">
+          <img src="{{ gig.client.avatar_url or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}" alt="client-av" class="w-12 h-12 rounded-full object-cover">
           <div>
             <span class="block text-[8px] font-mono text-[var(--text-secondary)] uppercase">Posted By</span>
             <p class="font-display font-semibold text-sm text-[var(--text-primary)]">
@@ -153,7 +153,7 @@
                 <div class="flex items-start justify-between">
                   <!-- Proposer Details -->
                   <div class="flex items-center gap-2">
-                    <img src="{{ p.freelancer.avatar or 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80' }}" alt="avatar" class="w-8 h-8 rounded-full object-cover">
+                    <img src="{{ p.freelancer.avatar_url or 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80' }}" alt="avatar" class="w-8 h-8 rounded-full object-cover">
                     <div>
                       <p class="font-sans font-bold text-xs text-[var(--text-primary)] leading-none">{{ p.freelancer.full_name }}</p>
                       <span class="text-[9px] text-[var(--text-secondary)] mt-1 block">{{ p.freelancer.university }}</span>

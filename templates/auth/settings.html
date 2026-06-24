@@ -11,7 +11,7 @@
     <div class="flex items-center gap-2.5 mb-2 flex-shrink-0">
       <div class="relative flex-shrink-0">
         <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-[var(--color-border)] bg-[var(--bg-primary)]" onclick="document.getElementById('avatar-input').click()" style="cursor:pointer">
-          <img src="{{ current_user.avatar or '/static/images/default-avatar.png' }}" class="w-full h-full object-cover" id="avatar-preview">
+          <img src="{{ current_user.avatar_url or '/static/images/default-avatar.png' }}" class="w-full h-full object-cover" id="avatar-preview">
         </div>
         <label for="avatar-input" class="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-[var(--color-brand)] flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 transition-all-smooth">
           <i data-lucide="camera" class="w-2.5 h-2.5 text-white"></i>

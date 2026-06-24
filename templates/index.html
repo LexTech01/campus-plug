@@ -42,7 +42,7 @@
 
     <!-- CTAs with tactile lift -->
     <div data-aos="fade-up" data-aos-delay="400" class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-      <a href="{{ url_for('marketplace.browse') }}" class="w-fit px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs sm:text-sm shadow-xl btn-lift flex items-center justify-center gap-2">
+      <a href="{{ url_for('marketplace.browse') }}" class="w-fit px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs sm:text-sm shadow-xl btn-lift btn-glow flex items-center justify-center gap-2">
         <i data-lucide="tag" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i> Explore Marketplace
       </a>
       <a href="{{ url_for('freelance.browse') }}" class="w-fit px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-[var(--bg-secondary)] text-[var(--text-primary)] font-sans font-bold text-xs sm:text-sm border border-[var(--color-border)] shadow-lg hover:bg-[var(--bg-tertiary)] hover:scale-105 transition-all-smooth flex items-center justify-center gap-2">
@@ -53,7 +53,7 @@
 </section>
 
 <!-- Dual Platform: How it works side-by-side -->
-<section id="how-it-works" class="max-w-7xl mx-auto px-6 py-24 border-t border-[var(--color-border)] relative">
+<section id="how-it-works" class="max-w-7xl mx-auto px-6 py-24 border-t border-[var(--color-border)] relative section-divider">
   <div data-aos="fade-up" class="text-center mb-16">
     <h2 class="font-display font-extrabold text-3xl mb-4 text-[var(--text-primary)]">Two Markets. One Shared Connection.</h2>
     <p class="max-w-xl mx-auto font-sans text-sm text-[var(--text-secondary)]">Campus Plug operates as a combined marketplace. Trade items or hire your colleagues — any student, of any campus, can interact safely.</p>
@@ -107,7 +107,7 @@
 </section>
 
 <!-- Trending/Featured Listings (Marketplace) -->
-<section class="border-t border-[var(--color-border)] py-24 bg-[rgba(255,255,255,0.01)] dark:bg-[rgba(19,26,38,0.3)]">
+<section class="border-t border-[var(--color-border)] py-24 bg-[rgba(255,255,255,0.01)] dark:bg-[rgba(19,26,38,0.3)] section-divider">
   <div class="max-w-7xl mx-auto px-6">
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-12 scroll-animate gap-4">
       <div>
@@ -126,7 +126,7 @@
              data-photos="{{ listing.photos }}">
           
           <div class="relative aspect-video overflow-hidden">
-            <img src="{{ listing.photo_list[0] }}" alt="item-photo" class="listing-card-img w-full h-full object-cover transition-transform duration-500 hover:scale-105">
+            <img src="{{ listing.photo_list[0] }}" alt="item-photo" class="listing-card-img w-full h-full object-cover transition-transform duration-500 hover:scale-105 img-reveal">
             <!-- Condition Tag -->
             <span class="absolute top-3 left-3 bg-[var(--bg-secondary)] text-[var(--text-primary)] text-[10px] font-mono font-bold px-2 py-1 rounded-md shadow-md border border-[var(--color-border)]">
               {{ listing.condition }}
@@ -185,7 +185,7 @@
 </section>
 
 <!-- Featured Gigs (Freelance Board) -->
-<section class="py-24 border-t border-[var(--color-border)]">
+<section class="py-24 border-t border-[var(--color-border)] section-divider">
   <div class="max-w-7xl mx-auto px-6">
     <div data-aos="fade-up" class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-12 gap-4">
       <div>
@@ -254,7 +254,7 @@
 </section>
 
 <!-- Fee Transparency: Pricing guarantee -->
-<section class="max-w-7xl mx-auto px-6 py-24 border-t border-[var(--color-border)]">
+<section class="max-w-7xl mx-auto px-6 py-24 border-t border-[var(--color-border)] section-divider">
   <div data-aos="zoom-in" class="bg-gradient-to-br from-purple-900/10 via-transparent to-amber-500/5 dark:from-purple-950/20 dark:to-transparent border border-[var(--color-border)] rounded-3xl p-8 sm:p-12 shadow-xl relative overflow-hidden">
     <!-- Starburst decoration -->
     <div class="absolute right-0 top-0 w-64 h-64 bg-gradient-to-b from-purple-500/5 to-transparent rounded-full filter blur-xl pointer-events-none"></div>
@@ -285,6 +285,91 @@
           <p class="font-sans text-[11px] text-[var(--text-secondary)]">Create as many product listings or bid proposals as you wish. We do not restrict student opportunity.</p>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="border-t border-[var(--color-border)] py-20 sm:py-24 section-divider">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6">
+    <div data-aos="fade-up" class="text-center mb-12 sm:mb-16">
+      <span class="font-mono text-[10px] font-extrabold uppercase text-[var(--color-accent)] tracking-wider">Got Questions?</span>
+      <h2 class="font-display font-extrabold text-2xl sm:text-3xl mt-2 mb-3 text-[var(--text-primary)]">Frequently Asked Questions</h2>
+      <p class="font-sans text-sm text-[var(--text-secondary)] max-w-lg mx-auto">Everything you need to know about buying, selling, and earning on Campus Plug.</p>
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <details class="group bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl overflow-hidden transition-all duration-300 open:shadow-md open:border-[var(--color-brand)]/30" data-aos="fade-up">
+        <summary class="flex items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 cursor-pointer list-none font-sans font-bold text-sm text-[var(--text-primary)] hover:text-[var(--color-brand)] transition-colors">
+          <span>How does Campus Plug work?</span>
+          <svg class="w-4 h-4 flex-shrink-0 text-[var(--text-secondary)] transition-transform duration-300 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="px-5 sm:px-6 pb-5 sm:pb-6 pt-0 border-t border-[var(--color-border)]">
+          <p class="font-sans text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed mt-3">
+            Campus Plug is a dual-platform marketplace for Ghanaian students. You can <strong class="text-[var(--text-primary)]">buy and sell items</strong> (textbooks, electronics, fashion, dorm essentials) in the Marketplace, or <strong class="text-[var(--text-primary)]">post and bid on freelance gigs</strong> (tutoring, graphic design, delivery, event help). Payments are held securely in escrow via Mobile Money until both parties are satisfied.
+          </p>
+        </div>
+      </details>
+
+      <details class="group bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl overflow-hidden transition-all duration-300 open:shadow-md open:border-[var(--color-brand)]/30" data-aos="fade-up" data-aos-delay="50">
+        <summary class="flex items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 cursor-pointer list-none font-sans font-bold text-sm text-[var(--text-primary)] hover:text-[var(--color-brand)] transition-colors">
+          <span>Is it free to use?</span>
+          <svg class="w-4 h-4 flex-shrink-0 text-[var(--text-secondary)] transition-transform duration-300 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="px-5 sm:px-6 pb-5 sm:pb-6 pt-0 border-t border-[var(--color-border)]">
+          <p class="font-sans text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed mt-3">
+            Absolutely. Creating an account, browsing listings, posting items, and bidding on gigs are all <strong class="text-[var(--text-primary)]">100% free</strong>. Campus Plug only collects a <strong class="text-[var(--text-primary)]">10% platform fee</strong> on completed sales — if nothing sells, you pay nothing.
+          </p>
+        </div>
+      </details>
+
+      <details class="group bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl overflow-hidden transition-all duration-300 open:shadow-md open:border-[var(--color-brand)]/30" data-aos="fade-up" data-aos-delay="100">
+        <summary class="flex items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 cursor-pointer list-none font-sans font-bold text-sm text-[var(--text-primary)] hover:text-[var(--color-brand)] transition-colors">
+          <span>How do payments work?</span>
+          <svg class="w-4 h-4 flex-shrink-0 text-[var(--text-secondary)] transition-transform duration-300 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="px-5 sm:px-6 pb-5 sm:pb-6 pt-0 border-t border-[var(--color-border)]">
+          <p class="font-sans text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed mt-3">
+            All payments are processed through <strong class="text-[var(--text-primary)]">Paystack</strong> using Mobile Money (MTN MoMo, Telecel Cash, AirtelTigo Money). When you buy an item or hire a freelancer, your payment is held in <strong class="text-[var(--text-primary)]">secure escrow</strong>. The seller only receives the funds after you confirm the item is delivered or the gig is completed. This protects both buyers and sellers.
+          </p>
+        </div>
+      </details>
+
+      <details class="group bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl overflow-hidden transition-all duration-300 open:shadow-md open:border-[var(--color-brand)]/30" data-aos="fade-up" data-aos-delay="150">
+        <summary class="flex items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 cursor-pointer list-none font-sans font-bold text-sm text-[var(--text-primary)] hover:text-[var(--color-brand)] transition-colors">
+          <span>Can I trust other students on the platform?</span>
+          <svg class="w-4 h-4 flex-shrink-0 text-[var(--text-secondary)] transition-transform duration-300 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="px-5 sm:px-6 pb-5 sm:pb-6 pt-0 border-t border-[var(--color-border)]">
+          <p class="font-sans text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed mt-3">
+            We encourage you to check a seller's <strong class="text-[var(--text-primary)]">ratings and peer reviews</strong> before transacting. Our escrow system ensures your money is only released when you confirm satisfaction. We also recommend meeting in safe public places on campus to inspect items. Our support team is available at <a href="mailto:{{ SUPPORT_EMAIL }}" class="text-[var(--color-brand)] hover:underline">{{ SUPPORT_EMAIL }}</a> to help resolve any disputes.
+          </p>
+        </div>
+      </details>
+
+      <details class="group bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl overflow-hidden transition-all duration-300 open:shadow-md open:border-[var(--color-brand)]/30" data-aos="fade-up" data-aos-delay="200">
+        <summary class="flex items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 cursor-pointer list-none font-sans font-bold text-sm text-[var(--text-primary)] hover:text-[var(--color-brand)] transition-colors">
+          <span>What if something goes wrong with my order?</span>
+          <svg class="w-4 h-4 flex-shrink-0 text-[var(--text-secondary)] transition-transform duration-300 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="px-5 sm:px-6 pb-5 sm:pb-6 pt-0 border-t border-[var(--color-border)]">
+          <p class="font-sans text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed mt-3">
+            If you have an issue with a transaction, you can <strong class="text-[var(--text-primary)]">open a dispute</strong> from your payments dashboard. An admin will review the case and release or refund the funds appropriately. For any other concerns, reach out to us at <a href="mailto:{{ SUPPORT_EMAIL }}" class="text-[var(--color-brand)] hover:underline">{{ SUPPORT_EMAIL }}</a> and we will respond promptly.
+          </p>
+        </div>
+      </details>
+
+      <details class="group bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl overflow-hidden transition-all duration-300 open:shadow-md open:border-[var(--color-brand)]/30" data-aos="fade-up" data-aos-delay="250">
+        <summary class="flex items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 cursor-pointer list-none font-sans font-bold text-sm text-[var(--text-primary)] hover:text-[var(--color-brand)] transition-colors">
+          <span>Who can join Campus Plug?</span>
+          <svg class="w-4 h-4 flex-shrink-0 text-[var(--text-secondary)] transition-transform duration-300 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="px-5 sm:px-6 pb-5 sm:pb-6 pt-0 border-t border-[var(--color-border)]">
+          <p class="font-sans text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed mt-3">
+            Anyone <strong class="text-[var(--text-primary)]">16 years or older</strong> can join — you don't need to be a student at a specific campus. Whether you're at KNUST, University of Ghana, Ashesi, UCC, or a business owner looking to reach students, you're welcome to buy, sell, and hire on Campus Plug.
+          </p>
+        </div>
+      </details>
     </div>
   </div>
 </section>

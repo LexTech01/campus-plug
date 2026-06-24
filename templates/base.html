@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Campus Plug - Ghana Student Marketplace{% endblock %}</title>
   
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="url_for('static', filename='favicon.ico')">
+  <link rel="shortcut icon" href="url_for('static', filename='favicon.ico')" type="image/x-icon">
+  <link rel="apple-touch-icon" href="url_for('static', filename='images/logo.png')">
+  
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script>
@@ -53,7 +58,7 @@
   <div class="bg-glow-purple top-[210vh] right-[12vw] opacity-50"></div>
 
   <!-- Toast Feed notifications -->
-  <div id="toast-container" class="fixed top-24 right-6 z-50 flex flex-col gap-3 max-w-sm w-full">
+  <div id="toast-container" class="fixed top-24 right-6 z-50 flex flex-col gap-3 max-w-sm w-full" style="top: calc(6rem + env(safe-area-inset-top, 0px)); right: calc(1.5rem + env(safe-area-inset-right, 0px));">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
@@ -87,14 +92,11 @@
 
   <!-- Navigation Bar -->
   {% if not request.endpoint or not request.endpoint.startswith('admin.') %}
-  <header id="main-header" class="fixed top-0 left-0 w-full z-40 py-5 transition-all duration-300 bg-transparent flex items-center">
+  <header id="main-header" class="fixed top-0 left-0 w-full z-40 py-5 transition-all duration-300 bg-transparent flex items-center" style="top: env(safe-area-inset-top, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);">
     <div class="max-w-7xl mx-auto w-full px-6 flex items-center justify-between">
       <!-- Logo -->
       <a href="{{ url_for('index') }}" class="flex items-center gap-2.5 z-50">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-amber-500 flex items-center justify-center shadow-lg transform rotate-3">
-          <i data-lucide="zap" class="w-5 h-5 text-white transform -rotate-3"></i>
-        </div>
-        <span class="font-display font-extrabold text-lg tracking-tight bg-gradient-to-r from-purple-500 via-pink-500 to-amber-500 bg-clip-text text-transparent">Campus Plug</span>
+        <img src="/static/images/logo.png" alt="Campus Plug" class="h-8 w-auto">
       </a>
 
       <!-- Desktop Links -->
@@ -134,6 +136,14 @@
       <!-- Desktop Auth Elements -->
       <div class="hidden md:flex items-center gap-4">
         {% if current_user.is_authenticated %}
+          <!-- Cart -->
+          <a href="{{ url_for('cart.view_cart') }}" class="p-2.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] hover:scale-105 transition-all-smooth relative" aria-label="Cart">
+            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+            {% if cart_count > 0 %}
+              <span class="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full text-white font-sans font-extrabold text-[8px] flex items-center justify-center shadow">{{ cart_count }}</span>
+            {% endif %}
+          </a>
+
           <!-- Messages -->
           <a href="{{ url_for('chat.inbox') }}" class="p-2.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] hover:scale-105 transition-all-smooth relative" aria-label="Messages">
             <i data-lucide="message-square" class="w-5 h-5"></i>
@@ -191,6 +201,9 @@
                   </div>
                 {% endfor %}
               </div>
+              <a href="{{ url_for('auth.notifications') }}" class="mt-3 block text-center text-[10px] font-sans font-bold text-purple-400 hover:text-purple-300 transition-colors py-2 border-t border-[var(--color-border)]">
+                View All Notifications
+              </a>
             </div>
           </div>
           
@@ -202,7 +215,7 @@
           <!-- Dropdown Profile Action -->
           <div class="relative group">
             <button class="flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] hover:bg-[var(--bg-tertiary)] transition-all-smooth">
-              <img src="{{ current_user.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}" alt="avatar" class="w-6 h-6 rounded-full object-cover">
+              <img src="{{ current_user.avatar_url or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}" alt="avatar" class="w-6 h-6 rounded-full object-cover">
               <span class="font-sans font-semibold text-xs max-w-[80px] truncate-ellipsis text-[var(--text-primary)]">{{ current_user.full_name }}</span>
               <i data-lucide="chevron-down" class="w-3 h-3 text-[var(--text-secondary)]"></i>
             </button>
@@ -236,14 +249,14 @@
           </div>
         {% else %}
           <a href="{{ url_for('auth.login') }}" class="font-sans font-bold text-xs text-[var(--text-primary)] px-5 py-2.5 rounded-full border border-[var(--color-border)] hover:bg-[var(--bg-tertiary)] hover:scale-105 transition-all-smooth bg-[var(--bg-secondary)]">Sign In</a>
-          <a href="{{ url_for('auth.register') }}" class="font-sans font-bold text-xs text-white px-5 py-2.5 rounded-full bg-[var(--color-brand)] btn-lift">Sign Up</a>
+          <a href="{{ url_for('auth.register') }}" class="font-sans font-bold text-xs text-white px-5 py-2.5 rounded-full bg-[var(--color-brand)] btn-lift btn-glow">Sign Up</a>
         {% endif %}
       </div>
 
       <!-- Hamburger (Mobile) -->
       <div class="flex items-center gap-2 md:hidden">
         {% if not current_user.is_authenticated %}
-        <a href="{{ url_for('auth.register') }}" class="px-4 py-2 rounded-full bg-[var(--color-brand)] text-white font-sans font-bold text-[10px] btn-lift whitespace-nowrap">Sign Up</a>
+        <a href="{{ url_for('auth.register') }}" class="px-4 py-2 rounded-full bg-[var(--color-brand)] text-white font-sans font-bold text-[10px] btn-lift btn-glow whitespace-nowrap">Sign Up</a>
         {% endif %}
         <button id="menu-btn" class="p-2.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] z-50" aria-label="Toggle Mobile Menu" aria-expanded="false">
           <i id="menu-icon-open" data-lucide="menu" class="w-5 h-5"></i>
@@ -259,7 +272,10 @@
   <div id="mobile-backdrop" class="fixed inset-0 bg-black/40 z-30 hidden"></div>
 
   <!-- Mobile Slide-In Menu -->
-  <div id="mobile-menu" class="fixed top-0 right-0 w-full max-w-sm h-screen bg-[var(--bg-secondary)] border-l border-[var(--color-border)] px-6 pt-20 pb-8 flex flex-col gap-6 shadow-2xl z-40 translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto">
+  <div id="mobile-menu" class="fixed top-0 right-0 w-full max-w-sm h-screen bg-[var(--bg-secondary)] border-l border-[var(--color-border)] px-6 pt-20 pb-8 flex flex-col gap-6 shadow-2xl z-40 translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto" style="padding-top: calc(5rem + env(safe-area-inset-top, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: calc(1.5rem + env(safe-area-inset-left, 0px)); padding-right: calc(1.5rem + env(safe-area-inset-right, 0px));">
+      <button onclick="closeMobileMenu()" class="absolute top-4 right-4 p-2 rounded-full bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all z-50" aria-label="Close menu" style="top: calc(1rem + env(safe-area-inset-top, 0px)); right: calc(1rem + env(safe-area-inset-right, 0px));">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
       <nav class="flex flex-col gap-4">
         <a href="{{ url_for('marketplace.browse') }}" class="font-sans font-bold text-lg text-[var(--text-primary)] flex items-center gap-2"><i data-lucide="tag" class="w-5 h-5 text-[var(--color-brand)]"></i> Marketplace</a>
         <a href="{{ url_for('freelance.browse') }}" class="font-sans font-bold text-lg text-[var(--text-primary)] flex items-center gap-2"><i data-lucide="briefcase" class="w-5 h-5 text-[var(--color-brand)]"></i> Freelance Gigs</a>
@@ -280,7 +296,7 @@
         {% if current_user.is_authenticated %}
           <div class="flex items-center justify-between gap-3 px-2 mb-2">
             <div class="flex items-center gap-3">
-              <img src="{{ current_user.avatar or '/static/images/default-avatar.png' }}" alt="avatar" class="w-10 h-10 rounded-full object-cover">
+              <img src="{{ current_user.avatar_url or '/static/images/default-avatar.png' }}" alt="avatar" class="w-10 h-10 rounded-full object-cover">
               <div>
                 <p class="font-display font-extrabold text-sm text-[var(--text-primary)]">{{ current_user.full_name }}</p>
                 <p class="font-sans font-medium text-xs text-[var(--text-secondary)]">{{ current_user.university }}</p>
@@ -288,6 +304,8 @@
             </div>
             <a href="{{ url_for('auth.logout') }}" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-red-500 bg-red-500/10 hover:bg-red-500/20 text-[11px] font-semibold transition-all-smooth flex-shrink-0"><i data-lucide="log-out" class="w-3.5 h-3.5"></i> Sign Out</a>
           </div>
+          <a href="{{ url_for('cart.view_cart') }}" class="flex items-center gap-3 font-semibold text-sm px-4 py-2 bg-[var(--bg-tertiary)] rounded-xl text-[var(--text-primary)]"><i data-lucide="shopping-cart" class="w-5 h-5"></i> Cart{% if cart_count > 0 %} <span class="ml-auto text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">{{ cart_count }}</span>{% endif %}</a>
+          <a href="{{ url_for('auth.notifications') }}" class="flex items-center gap-3 font-semibold text-sm px-4 py-2 bg-[var(--bg-tertiary)] rounded-xl text-[var(--text-primary)]"><i data-lucide="bell" class="w-5 h-5"></i> Notifications{% if unread_notifications_count > 0 %} <span class="ml-auto text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">{{ unread_notifications_count }}</span>{% endif %}</a>
           <a href="{{ url_for('chat.inbox') }}" class="flex items-center gap-3 font-semibold text-sm px-4 py-2 bg-[var(--bg-tertiary)] rounded-xl text-[var(--text-primary)]"><i data-lucide="message-square" class="w-5 h-5"></i> Chats</a>
           <a href="{{ url_for('payments.dashboard') }}" class="flex items-center gap-3 font-semibold text-sm px-4 py-2 bg-[var(--bg-tertiary)] rounded-xl text-[var(--text-primary)]"><i data-lucide="wallet" class="w-5 h-5"></i> Escrow Dashboard</a>
           <a href="{{ url_for('freelance.my_gigs') }}" class="flex items-center gap-3 font-semibold text-sm px-4 py-2 bg-[var(--bg-tertiary)] rounded-xl text-[var(--text-primary)]"><i data-lucide="briefcase" class="w-5 h-5"></i> My Gigs &amp; Bids</a>
@@ -297,7 +315,7 @@
           <a href="{{ url_for('auth.settings') }}" class="flex items-center gap-3 font-semibold text-sm px-4 py-2 bg-[var(--bg-tertiary)] rounded-xl text-[var(--text-primary)]"><i data-lucide="settings" class="w-5 h-5"></i> Profile Settings</a>
         {% else %}
           <a href="{{ url_for('auth.login') }}" class="font-sans text-center font-bold text-sm text-[var(--text-primary)] border border-[var(--color-border)] py-3 rounded-xl hover:bg-[var(--bg-tertiary)] transition-all-smooth bg-[var(--bg-secondary)]">Sign In</a>
-          <a href="{{ url_for('auth.register') }}" class="font-sans text-center font-bold text-sm text-white bg-[var(--color-brand)] py-3 rounded-xl hover:bg-opacity-90 active:scale-95 transition-all-smooth">Sign Up</a>
+          <a href="{{ url_for('auth.register') }}" class="font-sans text-center font-bold text-sm text-white bg-[var(--color-brand)] py-3 rounded-xl hover:bg-opacity-90 active:scale-95 transition-all-smooth btn-glow">Sign Up</a>
         {% endif %}
       </div>
     </div>
@@ -314,10 +332,7 @@
     <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-10 mb-8">
       <div class="col-span-2 md:col-span-1">
         <div class="flex items-center gap-2 mb-3">
-          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-amber-500 flex items-center justify-center shadow-md">
-            <i data-lucide="zap" class="w-4 h-4 text-white"></i>
-          </div>
-          <span class="font-display font-extrabold text-sm tracking-tight bg-gradient-to-r from-purple-500 to-amber-500 bg-clip-text text-transparent">Campus Plug</span>
+          <img src="/static/images/logo.png" alt="Campus Plug" class="h-7 w-auto">
         </div>
         <p class="font-sans text-[11px] text-[var(--text-secondary)] leading-relaxed max-w-xs">
           Ghana's peer-to-peer hub for marketplace listings, freelance gigs, and secure MoMo escrow payments.
@@ -387,6 +402,15 @@
       if (typeof lucide !== 'undefined') lucide.createIcons();
     });
   </script>
+  
+  {% if current_user.is_authenticated %}
+  <script>
+    // Heartbeat — updates last_seen every 2 minutes
+    setInterval(() => {
+      fetch('/auth/heartbeat', { method: 'GET', cache: 'no-store' });
+    }, 120000);
+  </script>
+  {% endif %}
   
   {% block scripts %}{% endblock %}
 </body>

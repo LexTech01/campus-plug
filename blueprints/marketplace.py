@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
 from flask_login import login_required, current_user
-from models import db, User, Listing, CATEGORIES, CONDITIONS, DELIVERY_POLICIES, UNIVERSITIES
+from models import db, User, Listing, Offer, CATEGORIES, CONDITIONS, DELIVERY_POLICIES, UNIVERSITIES, Notification
 from werkzeug.utils import secure_filename
 from PIL import Image
 
@@ -101,6 +101,7 @@ def create_listing():
         condition = request.form.get('condition', '')
         university = request.form.get('university', current_user.university)
         delivery_policy = request.form.get('delivery_policy', '')
+        is_negotiable = request.form.get('is_negotiable') == 'on'
         quantity_str = request.form.get('quantity', '1')
         
         # Save state to replenish form on error
@@ -113,6 +114,7 @@ def create_listing():
             'condition': condition,
             'university': university,
             'delivery_policy': delivery_policy,
+            'is_negotiable': is_negotiable,
             'quantity': quantity_str
         }
         
@@ -180,6 +182,22 @@ def create_listing():
                 errors['photos'] = 'Each photo must be less than 5 MB'
                 break
                 
+        # Parse original_price for discount display
+        original_price = None
+        discount_percent = None
+        if original_price_str:
+            try:
+                orig = float(original_price_str)
+                if orig <= 0:
+                    errors['original_price'] = 'Original price must be greater than GHS 0'
+                elif orig <= price:
+                    errors['original_price'] = 'Original price must be higher than the selling price'
+                else:
+                    original_price = orig
+                    discount_percent = int((orig - price) / orig * 100)
+            except ValueError:
+                errors['original_price'] = 'Please enter a valid original price'
+
         if not errors:
             # Save uploaded photos to static/uploads
             for idx, file in enumerate(uploaded_files):
@@ -193,19 +211,6 @@ def create_listing():
                 
             photos_str = ','.join(photos_urls) if photos_urls else '/static/images/placeholder.jpg'
             
-            # Parse original_price for discount display
-            original_price = None
-            discount_percent = None
-            if original_price_str:
-                try:
-                    orig = float(original_price_str)
-                    if orig > price:
-                        original_price = orig
-                        discount_percent = round((orig - price) / orig * 100)
-                except ValueError:
-                    pass
-            
-            # Create Listing
             new_listing = Listing(
                 seller_id=current_user.id,
                 title=title,
@@ -217,6 +222,7 @@ def create_listing():
                 condition=condition,
                 university=university,
                 delivery_policy=delivery_policy,
+                is_negotiable=is_negotiable,
                 quantity=quantity,
                 photos=photos_str,
                 status='active'
@@ -242,7 +248,18 @@ def detail(listing_id):
         (Listing.category == listing.category) | (Listing.university == listing.university)
     ).limit(3).all()
     
-    return render_template('marketplace/detail.html', listing=listing, related_items=related_items)
+    # Offers for this listing (sorted newest first)
+    offers = Offer.query.filter_by(listing_id=listing.id).order_by(Offer.created_at.desc()).all()
+    
+    # Buyer's own pending offer
+    buyer_offer = None
+    if current_user.is_authenticated:
+        buyer_offer = Offer.query.filter_by(
+            listing_id=listing.id, buyer_id=current_user.id
+        ).order_by(Offer.created_at.desc()).first()
+    
+    return render_template('marketplace/detail.html', listing=listing, related_items=related_items,
+                           offers=offers, buyer_offer=buyer_offer)
 
 
 @marketplace_bp.route('/marketplace/<int:listing_id>/edit', methods=['GET', 'POST'])
@@ -276,6 +293,7 @@ def edit_listing(listing_id):
         condition = request.form.get('condition', '')
         university = request.form.get('university', listing.university)
         delivery_policy = request.form.get('delivery_policy', '')
+        is_negotiable = request.form.get('is_negotiable') == 'on'
         quantity_str = request.form.get('quantity', '1')
         
         form_data = {
@@ -287,6 +305,7 @@ def edit_listing(listing_id):
             'condition': condition,
             'university': university,
             'delivery_policy': delivery_policy,
+            'is_negotiable': is_negotiable,
             'quantity': quantity_str
         }
         
@@ -326,28 +345,34 @@ def edit_listing(listing_id):
         if university not in UNIVERSITIES:
             errors['university'] = 'Please select a valid university'
             
+        # Discount fields validation
+        original_price = None
+        discount_percent = None
+        if original_price_str:
+            try:
+                orig = float(original_price_str)
+                if orig <= 0:
+                    errors['original_price'] = 'Original price must be greater than GHS 0'
+                elif orig <= price:
+                    errors['original_price'] = 'Original price must be higher than the selling price'
+                else:
+                    original_price = orig
+                    discount_percent = int((orig - price) / orig * 100)
+            except ValueError:
+                errors['original_price'] = 'Please enter a valid original price'
+
         if not errors:
             # Perform update
             listing.title = title
             listing.description = description
             listing.price = price
-            # Discount fields
-            original_price = None
-            discount_percent = None
-            if original_price_str:
-                try:
-                    orig = float(original_price_str)
-                    if orig > price:
-                        original_price = orig
-                        discount_percent = round((orig - price) / orig * 100)
-                except ValueError:
-                    pass
             listing.original_price = original_price
             listing.discount_percent = discount_percent
             listing.category = category
             listing.condition = condition
             listing.university = university
             listing.delivery_policy = delivery_policy
+            listing.is_negotiable = is_negotiable
             listing.quantity = quantity
             
             # Handle photo changes (removed + new)
@@ -396,6 +421,122 @@ def edit_listing(listing_id):
             return redirect(url_for('marketplace.detail', listing_id=listing.id))
             
     return render_template('marketplace/edit.html', errors=errors, form_data=form_data, listing=listing)
+
+
+@marketplace_bp.route('/marketplace/<int:listing_id>/offer', methods=['POST'])
+@login_required
+def make_offer(listing_id):
+    listing = Listing.query.get_or_404(listing_id)
+
+    if current_user.id == listing.seller_id:
+        flash('You cannot make an offer on your own listing.', 'warning')
+        return redirect(url_for('marketplace.detail', listing_id=listing.id))
+
+    if not listing.is_negotiable:
+        flash('This listing is not accepting offers.', 'warning')
+        return redirect(url_for('marketplace.detail', listing_id=listing.id))
+
+    if listing.status != 'active' or listing.is_sold_out:
+        flash('This listing is no longer available.', 'warning')
+        return redirect(url_for('marketplace.detail', listing_id=listing.id))
+
+    price_str = request.form.get('offer_price', '').strip()
+    message = request.form.get('offer_message', '').strip()
+
+    if not price_str:
+        flash('Please enter an offer price.', 'danger')
+        return redirect(url_for('marketplace.detail', listing_id=listing.id))
+
+    try:
+        price = float(price_str)
+        if price <= 0:
+            flash('Offer price must be greater than GHS 0.', 'danger')
+            return redirect(url_for('marketplace.detail', listing_id=listing.id))
+    except ValueError:
+        flash('Please enter a valid offer price.', 'danger')
+        return redirect(url_for('marketplace.detail', listing_id=listing.id))
+
+    offer = Offer(
+        listing_id=listing.id,
+        buyer_id=current_user.id,
+        price=price,
+        message=message or None,
+        status='pending'
+    )
+    db.session.add(offer)
+
+    n = Notification(
+        user_id=listing.seller_id,
+        notification_type='offer',
+        message=f"New offer of GHS {price:,.2f} from {current_user.full_name} for '{listing.title}'",
+        link=url_for('marketplace.detail', listing_id=listing.id)
+    )
+    db.session.add(n)
+    db.session.commit()
+
+    flash(f'Your offer of GHS {price:,.2f} has been sent to the seller.', 'success')
+    return redirect(url_for('marketplace.detail', listing_id=listing.id))
+
+
+@marketplace_bp.route('/marketplace/<int:listing_id>/offer/<int:offer_id>/respond', methods=['POST'])
+@login_required
+def respond_offer(listing_id, offer_id):
+    listing = Listing.query.get_or_404(listing_id)
+    offer = Offer.query.get_or_404(offer_id)
+
+    if current_user.id != listing.seller_id:
+        flash('Unauthorized.', 'danger')
+        return redirect(url_for('marketplace.detail', listing_id=listing.id))
+
+    if offer.listing_id != listing.id:
+        flash('Offer does not match this listing.', 'danger')
+        return redirect(url_for('marketplace.detail', listing_id=listing.id))
+
+    if offer.status != 'pending':
+        flash('This offer has already been responded to.', 'warning')
+        return redirect(url_for('marketplace.detail', listing_id=listing.id))
+
+    action = request.form.get('action', '')
+    note = request.form.get('seller_note', '').strip()
+
+    if action == 'accept':
+        offer.status = 'accepted'
+        flash('Offer accepted! The buyer can now purchase at the agreed price.', 'success')
+    elif action == 'counter':
+        counter_str = request.form.get('counter_price', '').strip()
+        if not counter_str:
+            flash('Please enter a counter price.', 'danger')
+            return redirect(url_for('marketplace.detail', listing_id=listing.id))
+        try:
+            counter_price = float(counter_str)
+            if counter_price <= 0:
+                flash('Counter price must be greater than GHS 0.', 'danger')
+                return redirect(url_for('marketplace.detail', listing_id=listing.id))
+        except ValueError:
+            flash('Please enter a valid counter price.', 'danger')
+            return redirect(url_for('marketplace.detail', listing_id=listing.id))
+        offer.price = counter_price
+        offer.status = 'countered'
+        offer.seller_note = note or None
+        flash(f'Counter offer of GHS {counter_price:,.2f} sent to buyer.', 'success')
+    elif action == 'decline':
+        offer.status = 'declined'
+        offer.seller_note = note or None
+        flash('Offer declined.', 'info')
+    else:
+        flash('Invalid action.', 'danger')
+        return redirect(url_for('marketplace.detail', listing_id=listing.id))
+
+    n = Notification(
+        user_id=offer.buyer_id,
+        notification_type='offer_response',
+        message=f"Your offer of GHS {offer.price:,.2f} for '{listing.title}' was {offer.status} by the seller.",
+        link=url_for('marketplace.detail', listing_id=listing.id)
+    )
+    db.session.add(n)
+    db.session.commit()
+
+    return redirect(url_for('marketplace.detail', listing_id=listing.id))
 
 
 @marketplace_bp.route('/marketplace/<int:listing_id>/mark_sold', methods=['POST'])

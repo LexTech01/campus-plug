@@ -53,7 +53,7 @@
       </div>
 
       <!-- Email + Phone -->
-      <div class="grid grid-cols-2 gap-2.5">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div class="floating-label-group !mb-0">
           <input type="email" name="email" placeholder=" " required value="{{ form_data.email or '' }}"
                  class="{% if errors.email %}shake-error{% endif %}">
@@ -69,7 +69,7 @@
       </div>
 
       <!-- Password + Confirm Password -->
-      <div class="grid grid-cols-2 gap-2.5">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div class="floating-label-group !mb-0">
           <input type="password" name="password" placeholder=" " required
                  class="{% if errors.password %}shake-error{% endif %}">

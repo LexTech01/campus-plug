@@ -11,7 +11,7 @@ from sqlalchemy import text, update as sa_update
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, jsonify
 from flask_login import login_required, current_user
 from extensions import csrf
-from models import db, User, Listing, Gig, Transaction, Proposal, Notification, TransactionStatus, Review
+from models import db, User, Listing, Gig, Offer, Transaction, Proposal, Notification, TransactionStatus, Review, CartItem
 
 payments_bp = Blueprint('payments', __name__)
 
@@ -40,7 +40,7 @@ def initialize_paystack_transaction(email, amount_ghs, reference, callback_url, 
         "currency": "GHS",
         "metadata": metadata or {}
     }
-    if not current_app.config.get('PAYSTACK_SECRET_KEY') or 'sk_test_' not in current_app.config['PAYSTACK_SECRET_KEY']:
+    if not current_app.config.get('PAYSTACK_SECRET_KEY') or not current_app.config['PAYSTACK_SECRET_KEY'].startswith('sk_'):
         current_app.logger.error("Paystack secret key is missing or invalid. Set PAYSTACK_SECRET_KEY in .env")
         return None
     try:
@@ -169,26 +169,44 @@ def process_successful_payment(reference, session):
     txn.paid_at = datetime.utcnow()
     
     if txn.context_type == 'listing':
-        # Atomic: only decrement if stock available — prevents overselling
-        result = session.execute(
-            text("UPDATE listings SET quantity = quantity - 1 WHERE id = :id AND quantity > 0"),
-            {'id': txn.context_id}
-        )
-        if result.rowcount == 0:
-            return False, "Item is no longer in stock"
-        
-        listing = Listing.query.get(txn.context_id)
-        if listing:
-            if listing.quantity == 0:
-                listing.status = 'sold'
-            
+        if txn.bulk_items:
+            for bitem in txn.bulk_items:
+                result = session.execute(
+                    text("UPDATE listings SET quantity = quantity - :qty WHERE id = :id AND quantity >= :qty"),
+                    {'id': bitem['listing_id'], 'qty': bitem.get('quantity', 1)}
+                )
+                if result.rowcount == 0:
+                    return False, f"'{bitem['title']}' is no longer in stock"
+                listing = Listing.query.get(bitem['listing_id'])
+                if listing and listing.quantity == 0:
+                    listing.status = 'sold'
             n_notify = Notification(
-                user_id=listing.seller_id,
+                user_id=txn.seller_id,
                 notification_type='proposal',
-                message=f"GHS {txn.amount:.2f} was locked in secure escrow for '{listing.title}'. Deliver item and confirm receipt to unlock funds.",
+                message=f"GHS {txn.amount:.2f} was locked in secure escrow for a bulk purchase of {len(txn.bulk_items)} item(s). Deliver them to unlock funds.",
                 link=url_for('payments.dashboard')
             )
             session.add(n_notify)
+        else:
+            result = session.execute(
+                text("UPDATE listings SET quantity = quantity - 1 WHERE id = :id AND quantity > 0"),
+                {'id': txn.context_id}
+            )
+            if result.rowcount == 0:
+                return False, "Item is no longer in stock"
+            
+            listing = Listing.query.get(txn.context_id)
+            if listing:
+                if listing.quantity == 0:
+                    listing.status = 'sold'
+                
+                n_notify = Notification(
+                    user_id=listing.seller_id,
+                    notification_type='proposal',
+                    message=f"GHS {txn.amount:.2f} was locked in secure escrow for '{listing.title}'. Deliver item and confirm receipt to unlock funds.",
+                    link=url_for('payments.dashboard')
+                )
+                session.add(n_notify)
             
     elif txn.context_type == 'gig':
         # Atomic: only accept if gig is still open — prevents double-assignment
@@ -227,23 +245,113 @@ def process_successful_payment(reference, session):
 
 # ROUTES
 
+@payments_bp.route('/payments/cart-checkout', methods=['POST'])
+@login_required
+def cart_checkout():
+    if not current_user.phone or not current_user.momo_provider:
+        flash("Please set your MoMo phone number and provider in Settings before checking out.", 'warning')
+        return redirect(url_for('auth.settings'))
+
+    cart_items = CartItem.query.filter_by(buyer_id=current_user.id).order_by(CartItem.created_at.desc()).all()
+    if not cart_items:
+        flash("Your cart is empty.", 'warning')
+        return redirect(url_for('cart.view_cart'))
+
+    seller_id = cart_items[0].listing.seller_id
+    for item in cart_items:
+        if item.listing.seller_id != seller_id:
+            flash("All cart items must be from the same seller.", 'warning')
+            return redirect(url_for('cart.view_cart'))
+        if item.listing.status != 'active' or item.listing.is_sold_out:
+            flash(f"'{item.listing.title}' is no longer available.", 'danger')
+            return redirect(url_for('cart.view_cart'))
+        if item.listing.seller_id == current_user.id:
+            flash("You cannot buy your own listing.", 'warning')
+            return redirect(url_for('cart.view_cart'))
+
+    total = sum(item.total_price for item in cart_items)
+    platform_fee = round(total * current_app.config['PLATFORM_FEE_PERCENT'], 2)
+    seller_payout_amount = round(total - platform_fee, 2)
+
+    bulk_items = []
+    first_listing = cart_items[0].listing
+    for item in cart_items:
+        listing = item.listing
+        bulk_items.append({
+            'listing_id': listing.id,
+            'title': listing.title,
+            'price': listing.price,
+            'quantity': item.quantity,
+        })
+
+    txn = Transaction(
+        buyer_id=current_user.id,
+        seller_id=seller_id,
+        context_type='listing',
+        context_id=first_listing.id,
+        listing_id=first_listing.id,
+        amount=total,
+        platform_fee=platform_fee,
+        seller_payout_amount=seller_payout_amount,
+        status=TransactionStatus.pending_payment,
+        bulk_items=bulk_items
+    )
+    db.session.add(txn)
+    db.session.flush()
+    txn.transition_to(TransactionStatus.pending_payment, db.session)
+
+    paystack_ref = f"CP_TXN_{txn.id}_{int(time.time())}"
+    txn.paystack_reference = paystack_ref
+    db.session.commit()
+
+    callback_url = url_for('payments.callback', _external=True)
+    metadata = {
+        "transaction_id": txn.id,
+        "context_type": 'listing',
+        "context_id": first_listing.id,
+        "is_cart_checkout": True
+    }
+
+    auth_url = initialize_paystack_transaction(
+        email=current_user.email,
+        amount_ghs=total,
+        reference=paystack_ref,
+        callback_url=callback_url,
+        metadata=metadata
+    )
+
+    if auth_url:
+        CartItem.query.filter_by(buyer_id=current_user.id).delete()
+        db.session.commit()
+        return redirect(auth_url)
+    else:
+        db.session.rollback()
+        flash("Payment gateway rejected the request. Check your Paystack keys.", "danger")
+        return redirect(url_for('cart.view_cart'))
+
+
 @payments_bp.route('/payments/checkout', methods=['GET', 'POST'])
 @login_required
 def checkout():
     listing_id = request.args.get('listing_id', type=int)
     gig_id = request.args.get('gig_id', type=int)
     proposal_id = request.args.get('proposal_id', type=int)
+    offer_id = request.args.get('offer_id', type=int)
     
     listing = Listing.query.get(listing_id) if listing_id else None
     gig = Gig.query.get(gig_id) if gig_id else None
     proposal = Proposal.query.get(proposal_id) if proposal_id else None
+    offer = Offer.query.get(offer_id) if offer_id else None
     
     if not listing and not (gig and proposal):
         flash("Invalid payment checkout context.", "error")
         return redirect(url_for('index'))
         
-    # Safeguard price (calculated solely on backend!)
-    amount = listing.price if listing else proposal.price
+    # Use offer price if this is an accepted offer checkout
+    if offer and offer.listing_id == listing_id and offer.status == 'accepted':
+        amount = offer.price
+    else:
+        amount = listing.price if listing else proposal.price
     seller_id = listing.seller_id if listing else proposal.freelancer_id
     seller = User.query.get(seller_id)
     
@@ -267,6 +375,7 @@ def checkout():
                 listing=listing,
                 gig=gig,
                 proposal=proposal,
+                offer=offer,
                 amount=amount,
                 seller=seller,
                 MOMO_PROVIDERS=MOMO_PROVIDERS,
@@ -346,6 +455,7 @@ def checkout():
         listing=listing, 
         gig=gig, 
         proposal=proposal, 
+        offer=offer,
         amount=amount, 
         seller=seller,
         MOMO_PROVIDERS=MOMO_PROVIDERS

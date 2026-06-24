@@ -57,7 +57,7 @@
                   <tr class="hover:bg-[var(--bg-primary)]/40 transition">
                     <td class="p-4 pl-6">
                       <div class="flex items-center gap-3">
-                        <img src="{{ user.avatar or '/static/images/default-avatar.png' }}" class="w-9 h-9 rounded-full border border-[var(--color-border)] object-cover" referrerpolicy="no-referrer">
+                        <img src="{{ user.avatar_url or '/static/images/default-avatar.png' }}" class="w-9 h-9 rounded-full border border-[var(--color-border)] object-cover" referrerpolicy="no-referrer">
                         <div>
                           <p class="font-bold text-sm text-[var(--text-primary)]">{{ user.full_name }}</p>
                           <p class="text-xs text-[var(--text-secondary)]">{{ user.email }}</p>

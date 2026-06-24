@@ -1,4 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: var(--color-brand);
+  color: #fff;
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
 
 :root {
   /* Font Family Definitions */
@@ -663,6 +682,15 @@ html.dark .bg-glow-teal {
   border-color: var(--color-brand);
 }
 
+/* Floating product card pulse animation on hero */
+.animate-pulse-slow {
+  animation: pulse-slow ease-in-out infinite;
+}
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; transform: translateY(0); }
+  50% { opacity: 0.85; transform: translateY(-8px); }
+}
+
 /* Floating university badges on hero */
 .uni-badge {
   position: absolute;
@@ -687,6 +715,119 @@ html.dark .bg-glow-teal {
   25% { transform: translateY(-18px) rotate(1deg); }
   50% { transform: translateY(-8px) rotate(-1deg); }
   75% { transform: translateY(-22px) rotate(.5deg); }
+}
+
+/* Primary button glow on hover */
+.btn-glow {
+  position: relative;
+  isolation: isolate;
+}
+.btn-glow::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  background: var(--color-brand);
+  opacity: 0;
+  filter: blur(16px);
+  z-index: -1;
+  transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-glow:hover::after {
+  opacity: 0.3;
+}
+
+/* Subtle image reveal on load */
+.img-reveal {
+  opacity: 0;
+  transform: scale(1.03);
+  transition: opacity 500ms cubic-bezier(0.4, 0, 0.2, 1), transform 500ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.img-reveal.loaded {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Section divider wave */
+.section-divider {
+  position: relative;
+}
+.section-divider::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-brand), var(--color-accent), transparent);
+  opacity: 0.15;
+}
+
+/* Price badge pulse */
+.price-badge {
+  position: relative;
+}
+.price-badge::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: var(--color-accent);
+  opacity: 0;
+  filter: blur(8px);
+  z-index: -1;
+  animation: pricePulse 3s ease-in-out infinite;
+}
+@keyframes pricePulse {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.15; }
+}
+
+/* Card subtle border glow on hover in dark mode */
+html.dark .listing-card:hover,
+html.dark .card-hover-lift:hover {
+  box-shadow: 0 0 0 1px rgba(91, 61, 245, 0.15), var(--shadow-hover) !important;
+}
+
+/* Mobile menu backdrop blur refinement */
+#mobile-menu {
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+/* Improve header scrolled blur */
+.header-scrolled {
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+/* Touch-friendly tap targets */
+@media (pointer: coarse) {
+  button, a, input, select, textarea, label { min-height: 44px; }
+  .listing-card a, .listing-card button { min-height: auto; }
+}
+
+/* Safe area inset variables */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}
+
+/* Landscape phone optimizations */
+@media (orientation: landscape) and (max-height: 500px) {
+  .hero-section { min-height: auto !important; padding-top: 1rem !important; padding-bottom: 1rem !important; }
 }
 
 /* ── Responsive tweaks ── */

@@ -34,8 +34,13 @@
   <!-- Search + Filter block -->
   <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-8 items-start">
     
+    <!-- Mobile Filter Toggle -->
+    <button id="filter-toggle" class="flex lg:hidden items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] font-sans font-bold text-xs hover:bg-[var(--bg-tertiary)] transition-all-smooth mb-4 w-full justify-center">
+      <i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Show Filters
+    </button>
+
     <!-- Sidebar Filters (Jumia-style compact) -->
-    <aside class="filter-sidebar bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl shadow-sm lg:sticky lg:top-24 self-start">
+    <aside id="filter-sidebar" class="filter-sidebar bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl shadow-sm lg:sticky lg:top-24 self-start hidden lg:block">
       <form action="{{ url_for('marketplace.browse') }}" method="GET" class="filter-sidebar-form">
 
         <div class="filter-sidebar-header">
@@ -214,7 +219,7 @@
         </div>
       {% endif %}
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for listing in listings %}
           <!-- Hover-to-preview next image configured via data-photos -->
           <div data-aos="fade-up" data-aos-delay="{{ loop.index0 * 100 }}" class="listing-card bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl overflow-hidden card-hover-lift flex flex-col justify-between"
@@ -223,10 +228,17 @@
             <div class="relative aspect-video overflow-hidden">
               <img src="{{ listing.photo_list[0] }}" alt="listing-img" class="listing-card-img w-full h-full object-cover transition-transform duration-500 hover:scale-105">
               
-              <!-- Condition Tag -->
-              <span class="absolute top-3 left-3 bg-[var(--bg-secondary)] text-[var(--text-primary)] text-[10px] font-mono font-bold px-2.5 py-1 rounded-md shadow-md border border-[var(--color-border)]">
-                {{ listing.condition }}
-              </span>
+              <!-- Badges row -->
+              <div class="absolute top-3 left-3 flex flex-wrap gap-2">
+                <span class="bg-[var(--bg-secondary)] text-[var(--text-primary)] text-[10px] font-mono font-bold px-2.5 py-1 rounded-md shadow-md border border-[var(--color-border)]">
+                  {{ listing.condition }}
+                </span>
+                {% if listing.is_negotiable %}
+                <span class="bg-amber-500/90 text-white text-[10px] font-mono font-bold px-2 py-1 rounded-md shadow-md">
+                  Negotiable
+                </span>
+                {% endif %}
+              </div>
               
               <!-- Discount Badge -->
               {% if listing.has_discount %}
@@ -275,9 +287,17 @@
                     {% endif %}
                   </span>
                 </div>
-                <a href="{{ url_for('marketplace.detail', listing_id=listing.id) }}" class="p-2 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--color-brand)] hover:text-white border border-[var(--color-border)] text-[var(--text-primary)] transition-all-smooth">
-                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                </a>
+                <div class="flex items-center gap-1">
+                  <form action="{{ url_for('cart.add_to_cart', listing_id=listing.id) }}" method="POST" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="p-2 rounded-xl bg-[var(--bg-primary)] hover:bg-amber-500 hover:text-white border border-[var(--color-border)] text-amber-500 transition-all-smooth" title="Add to Cart">
+                      <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </form>
+                  <a href="{{ url_for('marketplace.detail', listing_id=listing.id) }}" class="p-2 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--color-brand)] hover:text-white border border-[var(--color-border)] text-[var(--text-primary)] transition-all-smooth">
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -318,4 +338,21 @@
   </div>
 </section>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const filterToggle = document.getElementById('filter-toggle');
+  const filterSidebar = document.getElementById('filter-sidebar');
+  if (filterToggle && filterSidebar) {
+    filterToggle.addEventListener('click', () => {
+      const isHidden = filterSidebar.classList.toggle('hidden');
+      filterSidebar.classList.toggle('lg:block');
+      filterToggle.innerHTML = isHidden
+        ? '<i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Show Filters'
+        : '<i data-lucide="x" class="w-4 h-4"></i> Hide Filters';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+  }
+</script>
 {% endblock %}

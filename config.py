@@ -32,12 +32,7 @@ class Config:
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
     UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
 
-    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
-    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
-    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() == 'true'
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@campusplug.com')
+    RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
 
     APP_URL = os.environ.get('APP_URL', 'http://127.0.0.1:5000')
 

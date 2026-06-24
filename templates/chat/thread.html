@@ -40,15 +40,27 @@
     </div>
   {% endif %}
 
-  <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[70vh] glass-card">
+  <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[70vh] sm:h-[calc(100vh-14rem)] glass-card">
     
     <!-- Partner Info Header bar -->
     <div class="px-6 py-4 border-b border-[var(--color-border)] bg-[rgba(255,255,255,0.01)] flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-3">
-        <img src="{{ other_user.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}" alt="avatar" class="w-10 h-10 rounded-full object-cover border border-[var(--color-border)]">
+        <img src="{{ other_user.avatar_url or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}" alt="avatar" class="w-10 h-10 rounded-full object-cover border border-[var(--color-border)]">
         <div>
-          <h2 class="font-display font-extrabold text-sm text-[var(--text-primary)] leading-none mb-1">{{ other_user.full_name }}</h2>
-          <span class="text-[10px] font-mono text-purple-400 font-bold uppercase tracking-wider">{{ other_user.university }}</span>
+          <div class="flex items-center gap-2 mb-0.5">
+            <h2 class="font-display font-extrabold text-sm text-[var(--text-primary)] leading-none">{{ other_user.full_name }}</h2>
+            <span class="inline-block w-2 h-2 rounded-full {% if other_user.is_online %}bg-green-500{% else %}bg-[var(--text-secondary)]{% endif %} flex-shrink-0" title="{% if other_user.is_online %}Online{% else %}Offline{% endif %}"></span>
+          </div>
+          <span class="text-[10px] font-mono text-[var(--text-secondary)]">
+            {% if other_user.is_online %}
+              <span class="text-green-500 font-semibold">Online</span>
+            {% elif other_user.last_seen %}
+              Last seen {{ other_user.last_seen.strftime('%-d %b %Y at %-I:%M %p') }}
+            {% else %}
+              Offline
+            {% endif %}
+          </span>
+          <span class="text-[10px] font-mono text-purple-400 font-bold uppercase tracking-wider ml-2">{{ other_user.university }}</span>
         </div>
       </div>
 

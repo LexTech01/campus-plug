@@ -5,10 +5,11 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template,redirect, url_for, flash, jsonify
 from flask_login import LoginManager
 try:
-    from flask_migrate import Migrate
+    from flask_migrate import Migrate, upgrade
     HAS_MIGRATE = True
 except ImportError:
     Migrate = None
+    upgrade = None
     HAS_MIGRATE = False
 from extensions import csrf
 from config import DevelopmentConfig, ProductionConfig, Config
@@ -86,6 +87,7 @@ def create_app():
     from blueprints.payments import payments_bp
     from blueprints.admin import admin_bp
     from blueprints.map import map_bp
+    from blueprints.cart import cart_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(marketplace_bp)
@@ -94,19 +96,23 @@ def create_app():
     app.register_blueprint(payments_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(map_bp)
+    app.register_blueprint(cart_bp)
 
     # Custom context processors/filters for Jinja2
     @app.context_processor
     def inject_globals():
-        from models import UNIVERSITIES, CATEGORIES, CONDITIONS, DELIVERY_POLICIES, MOMO_PROVIDERS, GIG_CATEGORIES, Notification, Message
+        from models import UNIVERSITIES, CATEGORIES, CONDITIONS, DELIVERY_POLICIES, MOMO_PROVIDERS, GIG_CATEGORIES, Notification, Message, CartItem
         from flask_login import current_user
         unread_notifications_count = 0
         unread_messages_count = 0
         recent_notifications = []
+        cart_count = 0
         if current_user.is_authenticated:
             unread_notifications_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
             unread_messages_count = Message.query.filter_by(recipient_id=current_user.id, is_read=False).count()
             recent_notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).limit(5).all()
+            cart_count = CartItem.query.filter_by(buyer_id=current_user.id).count()
+        import time as _time
         return {
             'UNIVERSITIES': UNIVERSITIES,
             'CATEGORIES': CATEGORIES,
@@ -117,7 +123,9 @@ def create_app():
             'unread_notifications_count': unread_notifications_count,
             'unread_messages_count': unread_messages_count,
             'recent_notifications': recent_notifications,
+            'cart_count': cart_count,
             'SUPPORT_EMAIL': 'campusplug30@gmail.com',
+            'cache_buster': int(_time.time()),
         }
 
     # Root route - Landing page
@@ -214,6 +222,12 @@ def create_app():
     def internal_server_error(e):
         return render_template('errors/500.html'), 500
 
+    # Favicon
+    @app.route('/favicon.ico')
+    def favicon():
+        from flask import send_from_directory
+        return send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
     # Health check
     @app.route('/health')
     def health():
@@ -223,11 +237,18 @@ def create_app():
         except Exception as e:
             return jsonify({'status': 'unhealthy', 'database': str(e)}), 500
 
-    # Create Database and Seed if empty (dev only — prod uses Flask-Migrate)
+    # Create Database and Seed if empty
     with app.app_context():
-        if app.config.get('DEBUG', False) and not os.environ.get('SKIP_DB_CREATE'):
-            db.create_all()
-            seed_data()
+        if os.environ.get('SKIP_DB_CREATE') != '1':
+            if HAS_MIGRATE and upgrade:
+                try:
+                    upgrade()
+                except Exception:
+                    db.create_all()
+            else:
+                db.create_all()
+            if app.config.get('DEBUG', False):
+                seed_data()
 
     return app
 

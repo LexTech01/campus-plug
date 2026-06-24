@@ -10,6 +10,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: true });
   }
 
+  // ── Image reveal on load ──
+  document.querySelectorAll('.img-reveal').forEach((img) => {
+    if (img.complete) {
+      img.classList.add('loaded');
+    } else {
+      img.addEventListener('load', () => img.classList.add('loaded'));
+      img.addEventListener('error', () => img.classList.add('loaded'));
+    }
+  });
+
   // ── Mobile hamburger with slide animation ──
   const menuBtn = document.getElementById('menu-btn');
   const mobileMenu = document.getElementById('mobile-menu');
@@ -50,7 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     mobileBackdrop.addEventListener('click', closeMenu);
 
-    // Close menu on resize to desktop
     window.addEventListener('resize', () => {
       if (window.innerWidth >= 768 && mobileMenu.classList.contains('translate-x-0')) {
         closeMenu();

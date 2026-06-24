@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Cart - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-4xl mx-auto px-6 py-6 relative z-10">
+
+  <div data-aos="fade-up" class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+    <div>
+      <h1 class="font-display font-extrabold text-2xl tracking-tight text-[var(--text-primary)] flex items-center gap-3">
+        <i data-lucide="shopping-cart" class="w-6 h-6 text-amber-500"></i> Your Cart
+      </h1>
+      <p class="font-sans text-xs text-[var(--text-secondary)] mt-1">
+        Review items before checkout. You can only buy from one seller at a time.
+      </p>
+    </div>
+    {% if items %}
+    <form action="{{ url_for('cart.clear_cart') }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="px-4 py-2 rounded-xl border border-red-500/30 text-red-500 font-sans font-bold text-xs hover:bg-red-500/10 transition-all-smooth flex items-center gap-2">
+        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear Cart
+      </button>
+    </form>
+    {% endif %}
+  </div>
+
+  {% if not items %}
+  <div data-aos="fade-up" class="text-center py-24 bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl shadow-lg">
+    <i data-lucide="shopping-bag" class="w-16 h-16 text-[var(--text-secondary)] mx-auto mb-4"></i>
+    <h3 class="font-display font-extrabold text-lg text-[var(--text-primary)] mb-1">Your cart is empty</h3>
+    <p class="font-sans text-xs text-[var(--text-secondary)] max-w-sm mx-auto mb-6">
+      Browse the marketplace and add items from the same seller to buy in bulk.
+    </p>
+    <a href="{{ url_for('marketplace.browse') }}" class="px-5 py-2.5 rounded-xl bg-[var(--color-brand)] text-white font-sans font-semibold text-xs shadow-md hover:opacity-90 active:scale-95 transition-all-smooth">
+      Browse Marketplace
+    </a>
+  </div>
+
+  {% else %}
+
+  <!-- Seller info -->
+  <div data-aos="fade-up" class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl p-4 mb-6 shadow-sm flex items-center gap-3">
+    <img src="{{ seller.avatar_url or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}" alt="{{ seller.full_name }}" class="w-10 h-10 rounded-full object-cover border border-[var(--color-border)]">
+    <div>
+      <p class="font-display font-extrabold text-sm text-[var(--text-primary)]">Selling from {{ seller.full_name }}</p>
+      <p class="font-sans text-[10px] text-[var(--text-secondary)]">{{ seller.university }} &middot; {{ items|length }} item{% if items|length != 1 %}s{% endif %}</p>
+    </div>
+    <a href="{{ url_for('marketplace.browse', university=seller.university) }}" class="ml-auto text-[10px] font-bold text-purple-400 hover:text-purple-300 transition-colors">
+      View all from seller
+    </a>
+  </div>
+
+  <!-- Cart items -->
+  <div class="flex flex-col gap-4 mb-8">
+    {% for item in items %}
+    {% set listing = item.listing %}
+    <div data-aos="fade-up" data-aos-delay="{{ loop.index0 * 50 }}" class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row gap-4">
+      <img src="{{ listing.photo_list[0] }}" alt="{{ listing.title }}" class="w-full sm:w-24 h-24 object-cover rounded-xl border border-[var(--color-border)]">
+      <div class="flex-grow min-w-0">
+        <a href="{{ url_for('marketplace.detail', listing_id=listing.id) }}" class="font-display font-bold text-sm text-[var(--text-primary)] hover:text-[var(--color-brand)] transition-colors line-clamp-1">{{ listing.title }}</a>
+        <p class="font-sans text-[10px] text-[var(--text-secondary)] mt-0.5">{{ listing.condition }} &middot; {{ listing.category }}</p>
+        <div class="flex items-center gap-4 mt-2">
+          <span class="font-display font-extrabold text-base text-[var(--color-accent)]">GHS {{ "{:,.2f}".format(item.total_price) }}</span>
+          <span class="text-[10px] font-mono text-[var(--text-secondary)]">GHS {{ "{:,.2f}".format(listing.price) }} each</span>
+        </div>
+      </div>
+      <div class="flex sm:flex-col items-center sm:items-end gap-3 sm:gap-2 sm:justify-between">
+        <form action="{{ url_for('cart.update_cart', item_id=item.id) }}" method="POST" class="flex items-center gap-1.5">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" name="quantity" value="{{ item.quantity - 1 }}" {% if item.quantity <= 1 %}disabled{% endif %} class="w-7 h-7 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-all disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold">&minus;</button>
+          <span class="w-8 text-center font-mono font-bold text-xs text-[var(--text-primary)]">{{ item.quantity }}</span>
+          <button type="submit" name="quantity" value="{{ item.quantity + 1 }}" {% if item.quantity >= 99 %}disabled{% endif %} class="w-7 h-7 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-all disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold">+</button>
+        </form>
+        <form action="{{ url_for('cart.remove_from_cart', item_id=item.id) }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="text-[10px] font-sans font-bold text-red-500 hover:text-red-400 transition-colors flex items-center gap-1">
+            <i data-lucide="x" class="w-3 h-3"></i> Remove
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Summary + Checkout -->
+  <div data-aos="fade-up" class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl p-6 shadow-sm">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div>
+        <p class="font-sans text-[10px] text-[var(--text-secondary)] uppercase tracking-wider font-bold">Cart Total</p>
+        <p class="font-display font-extrabold text-3xl text-[var(--color-accent)]">GHS {{ "{:,.2f}".format(total) }}</p>
+        <p class="font-sans text-[10px] text-[var(--text-secondary)] mt-1">
+          Platform fee (10%): GHS {{ "{:,.2f}".format(total * 0.1) }} &middot;
+          Seller receives: GHS {{ "{:,.2f}".format(total * 0.9) }}
+        </p>
+      </div>
+      <form action="{{ url_for('payments.cart_checkout') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="px-8 py-4 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-sm shadow-md btn-lift btn-glow flex items-center gap-2 hover:opacity-95 transition-all-smooth">
+          <i data-lucide="credit-card" class="w-5 h-5"></i> Checkout All (GHS {{ "{:,.2f}".format(total) }})
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {% endif %}
+
+  <!-- Bulk buy info banner -->
+  <div data-aos="fade-up" class="mt-8 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-amber-400 flex items-start gap-3">
+    <i data-lucide="info" class="w-5 h-5 mt-0.5 shrink-0"></i>
+    <div>
+      <p class="font-sans font-bold text-xs">Bulk Buying from the Same Seller</p>
+      <p class="font-sans text-[10px] text-amber-400/70 mt-1 leading-relaxed">
+        Add multiple items from the same seller to your cart and checkout once.
+        Campus Plug will create a single combined payment so you only pay once.
+        All items are protected by our MoMo Escrow system.
+      </p>
+    </div>
+  </div>
+
+</section>
+{% endblock %}

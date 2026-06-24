@@ -3,10 +3,8 @@ import re
 import secrets
 import random
 import time
-import smtplib
 from io import BytesIO
 from datetime import datetime, timedelta
-from email.message import EmailMessage
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
@@ -14,6 +12,7 @@ from models import db, User, Listing, Gig, Notification, UNIVERSITIES, MOMO_PROV
 from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
 from PIL import Image
+from mail import send_email
 from utils import rate_limit
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -34,7 +33,7 @@ def register():
     
     if request.method == 'POST':
         # Retrieve form data
-        email = request.form.get('email', '').strip()
+        email = request.form.get('email', '').strip().lower()
         full_name = request.form.get('full_name', '').strip()
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
@@ -174,12 +173,11 @@ def send_recommendations(user):
     user.last_recommendation_at = datetime.utcnow()
     db.session.commit()
 
-    # Send email with recommendations via SMTP
-    smtp_configured = current_app.config.get('MAIL_USERNAME')
-    if smtp_configured and user.email:
+    # Send email with recommendations via Resend
+    if user.email:
         try:
-            listing_url = url_for('marketplace.listing_detail', listing_id=listing.id, _external=True) if listing else None
-            gig_url = url_for('freelance.gig_detail', gig_id=gig.id, _external=True) if gig else None
+            listing_url = url_for('marketplace.detail', listing_id=listing.id, _external=True) if listing else None
+            gig_url = url_for('freelance.detail', gig_id=gig.id, _external=True) if gig else None
             html_body = render_template('emails/recommendations.html',
                 user=user,
                 listing={'title': listing.title, 'description': listing.description, 'price': listing.price, 'url': listing_url} if listing else None,
@@ -187,21 +185,11 @@ def send_recommendations(user):
                 browse_url=url_for('index', _external=True),
                 settings_url=url_for('auth.settings', _external=True)
             )
-            msg = EmailMessage()
-            msg['Subject'] = 'Discover on Campus Plug'
-            msg['From'] = current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@campusplug.com')
-            msg['To'] = user.email
-            msg.set_content('View this email in HTML format.', plain=True)
-            msg.add_alternative(html_body, subtype='html')
-
-            with smtplib.SMTP(current_app.config['MAIL_SERVER'], current_app.config['MAIL_PORT']) as server:
-                if current_app.config.get('MAIL_USE_TLS'):
-                    server.starttls()
-                username = current_app.config['MAIL_USERNAME']
-                password = current_app.config.get('MAIL_PASSWORD')
-                if username and password:
-                    server.login(username, password)
-                server.send_message(msg)
+            send_email(
+                to=user.email,
+                subject='Discover on Campus Plug',
+                html_body=html_body
+            )
         except Exception as e:
             current_app.logger.warning(f"Failed to send recommendation email to {user.email}: {e}")
 
@@ -216,7 +204,7 @@ def login():
     form_data = {}
     
     if request.method == 'POST':
-        email = request.form.get('email', '').strip()
+        email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
         remember = request.form.get('remember') == 'on'
         
@@ -261,6 +249,14 @@ def logout():
     return redirect(url_for('index'))
 
 
+@auth_bp.route('/heartbeat')
+@login_required
+def heartbeat():
+    current_user.last_seen = datetime.utcnow()
+    db.session.commit()
+    return ('', 204)
+
+
 @auth_bp.route('/notifications/<int:notification_id>/read')
 @login_required
 def read_notification(notification_id):
@@ -283,6 +279,20 @@ def read_all_notifications():
     db.session.commit()
     flash('All notifications marked read.', 'success')
     return redirect(request.referrer or url_for('index'))
+
+
+@auth_bp.route('/notifications')
+@login_required
+def notifications():
+    page = request.args.get('page', 1, type=int)
+    pagination = Notification.query.filter_by(user_id=current_user.id)\
+        .order_by(Notification.created_at.desc())\
+        .paginate(page=page, per_page=20, error_out=False)
+    notifications = pagination.items
+    return render_template('auth/notifications.html',
+        notifications=notifications,
+        pagination=pagination
+    )
 
 
 @auth_bp.route('/upgrade-seller')
@@ -424,7 +434,7 @@ def settings():
                     filename = f"avatar_{current_user.id}_{int(time.time())}_{filename}"
                     file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
                     avatar_file.save(file_path)
-                    current_user.avatar = f"/static/uploads/{filename}"
+                    current_user.avatar = f"/static/uploads/{filename}?v={int(time.time())}"
 
             if not errors:
                 db.session.commit()
@@ -485,27 +495,16 @@ def forgot_password():
                 user.password_reset_expires_at = datetime.utcnow() + timedelta(hours=1)
                 db.session.commit()
 
-                if current_app.config.get('MAIL_USERNAME'):
-                    try:
-                        reset_url = url_for('auth.reset_password', token=token, _external=True)
-                        html_body = render_template('emails/forgot_password.html', user=user, reset_url=reset_url)
-                        msg = EmailMessage()
-                        msg['Subject'] = 'Reset Your Campus Plug Password'
-                        msg['From'] = current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@campusplug.com')
-                        msg['To'] = user.email
-                        msg.set_content(f'Reset your password here: {reset_url}', plain=True)
-                        msg.add_alternative(html_body, subtype='html')
-
-                        with smtplib.SMTP(current_app.config['MAIL_SERVER'], current_app.config['MAIL_PORT']) as server:
-                            if current_app.config.get('MAIL_USE_TLS'):
-                                server.starttls()
-                            username = current_app.config['MAIL_USERNAME']
-                            password = current_app.config.get('MAIL_PASSWORD')
-                            if username and password:
-                                server.login(username, password)
-                            server.send_message(msg)
-                    except Exception as e:
-                        current_app.logger.error(f"Failed to send password reset email: {e}")
+                try:
+                    reset_url = url_for('auth.reset_password', token=token, _external=True)
+                    html_body = render_template('emails/forgot_password.html', user=user, reset_url=reset_url)
+                    send_email(
+                        to=user.email,
+                        subject='Reset Your Campus Plug Password',
+                        html_body=html_body
+                    )
+                except Exception as e:
+                    current_app.logger.error(f"Failed to send password reset email: {e}")
 
             sent = True
 
