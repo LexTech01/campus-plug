@@ -33,12 +33,6 @@ Peer-to-peer campus marketplace and freelance gig platform for university studen
 
 5. Open [http://127.0.0.1:5000](http://127.0.0.1:5000)
 
-## Demo Accounts
-
-After the first run, the app seeds sample data. You can sign in with:
-
-- `yaw@knust.edu.gh` / `Temp@12345678`
-- `alexanderwinfred17@gmail.com` / `Admin@98765432` (admin)
 
 ## Environment Variables
 
