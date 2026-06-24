@@ -253,7 +253,7 @@ def seed_data():
         longitude=-1.5716,
         location_name='KNUST Campus, Kumasi'
     )
-    u1.set_password("Temp@12345678")
+    u1.password_hash = "scrypt:32768:8:1$TTLpP1eEOipRQTqC$cd502b4bc514d2d8218f3801a21e7fb8d50362bc8b3dcfc5ce0ef841c79655a7ada1251723876f898e608b53c7a5e9d1790fee78cb944975ebdd5d0a947c5c1e"
     
     u2 = User(
         email="abena@ug.edu.gh",
@@ -270,7 +270,7 @@ def seed_data():
         longitude=-0.1871,
         location_name='University of Ghana, Legon'
     )
-    u2.set_password("Temp@12345678")
+    u2.password_hash = "scrypt:32768:8:1$TTLpP1eEOipRQTqC$cd502b4bc514d2d8218f3801a21e7fb8d50362bc8b3dcfc5ce0ef841c79655a7ada1251723876f898e608b53c7a5e9d1790fee78cb944975ebdd5d0a947c5c1e"
     
     u3 = User(
         email="ernest@ashesi.edu.gh",
@@ -287,7 +287,7 @@ def seed_data():
         longitude=-0.2066,
         location_name='Ashesi University, Berekuso'
     )
-    u3.set_password("Temp@12345678")
+    u3.password_hash = "scrypt:32768:8:1$TTLpP1eEOipRQTqC$cd502b4bc514d2d8218f3801a21e7fb8d50362bc8b3dcfc5ce0ef841c79655a7ada1251723876f898e608b53c7a5e9d1790fee78cb944975ebdd5d0a947c5c1e"
 
     u4 = User(
         email="esi@ucc.edu.gh",
@@ -300,7 +300,7 @@ def seed_data():
         is_verified=True,
         referral_code=generate_referral_code()
     )
-    u4.set_password("Temp@12345678")
+    u4.password_hash = "scrypt:32768:8:1$TTLpP1eEOipRQTqC$cd502b4bc514d2d8218f3801a21e7fb8d50362bc8b3dcfc5ce0ef841c79655a7ada1251723876f898e608b53c7a5e9d1790fee78cb944975ebdd5d0a947c5c1e"
 
     u5 = User(
         email="alexanderwinfred17@gmail.com",
@@ -315,7 +315,7 @@ def seed_data():
         is_admin=True,
         referral_code=generate_referral_code()
     )
-    u5.set_password("Admin@98765432")
+    u5.password_hash = "scrypt:32768:8:1$J64MXkphnToFrgoF$7b7bbffe34dc5197513a18a8d549cc3fa7be1d456cfdb54080b9604e1c102e1499c9249f23797c851a03a6365fe86e891e80c07a35df613880b66d7b13ef1dd7"
 
     db.session.add_all([u1, u2, u3, u4, u5])
     db.session.commit() # Commit users so we can link foreign keys
