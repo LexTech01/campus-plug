@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-md mx-auto w-full px-6 py-16 relative z-10 flex flex-col items-center">
+  
+  <div data-aos="fade-up" class="w-full bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-3xl p-8 shadow-xl relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full filter blur-lg"></div>
+
+    <div class="text-center mb-8">
+      <h2 class="font-display font-extrabold text-2xl text-[var(--text-primary)]">Welcome Back!</h2>
+      <p class="font-sans text-xs text-[var(--text-secondary)] mt-1">Sign in to check listings, bids, or escrow payouts</p>
+    </div>
+
+    <!-- General validation alerts -->
+    {% if errors.general %}
+      <div class="mb-6 p-4 bg-red-500/10 border-l-4 border-red-500 text-red-500 rounded text-xs">
+        {{ errors.general }}
+      </div>
+    {% endif %}
+
+    <form action="{{ url_for('auth.login', next=request.args.get('next', '')) }}" method="POST" class="validate-shake-form flex flex-col gap-1.5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      
+      <!-- Email -->
+      <div class="floating-label-group">
+        <input type="email" name="email" placeholder=" " required value="{{ form_data.email or '' }}"
+               class="{% if errors.email %}shake-error{% endif %}">
+        <label>Email Address</label>
+        {% if errors.email %}<span class="text-[10px] text-red-500 font-medium">{{ errors.email }}</span>{% endif %}
+      </div>
+
+      <!-- Password -->
+      <div class="floating-label-group">
+        <input type="password" name="password" placeholder=" " required
+               class="{% if errors.password %}shake-error{% endif %}">
+        <label>Your Password</label>
+        {% if errors.password %}<span class="text-[10px] text-red-500 font-medium">{{ errors.password }}</span>{% endif %}
+      </div>
+
+      <!-- Remember Me -->
+      <div class="flex items-center justify-between mt-1 mb-6">
+        <label class="flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" name="remember" class="w-4 h-4 rounded border-[var(--color-border)] text-[var(--color-brand)] focus:ring-[var(--color-brand)]">
+          <span class="font-sans text-xs text-[var(--text-secondary)]">Remember me on this browser</span>
+        </label>
+        <a href="{{ url_for('auth.forgot_password') }}" class="font-sans text-xs text-[var(--color-brand)] hover:underline">Forgot Password?</a>
+      </div>
+
+      <!-- CTA -->
+      <button type="submit" class="w-full py-4 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-sm shadow-md hover:shadow-lg hover:scale-[1.01] transition-all-smooth active:scale-95 flex items-center justify-center gap-2">
+        <i data-lucide="log-in" class="w-4 h-4"></i> Enter Campus Plug
+      </button>
+
+    </form>
+  </div>
+
+  <p class="font-sans text-xs text-[var(--text-secondary)] mt-6">
+    New to Campus Plug? 
+    <a href="{{ url_for('auth.register') }}" class="text-[var(--color-brand)] font-bold hover:underline">Register free here</a>
+  </p>
+</section>
+{% endblock %}

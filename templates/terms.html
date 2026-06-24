@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Terms & Conditions - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-3xl mx-auto px-4 md:px-8 py-10 relative z-10">
+
+  <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl p-8 shadow-sm">
+    <h1 class="font-display font-extrabold text-2xl text-[var(--text-primary)] mb-1">Terms & Conditions</h1>
+    <p class="font-sans text-xs text-[var(--text-secondary)] mb-8">Last updated: June 2026</p>
+
+    <div class="font-sans text-sm text-[var(--text-primary)] leading-relaxed space-y-6">
+
+      <div>
+        <h2 class="font-display font-bold text-base text-[var(--text-primary)] mb-2">1. Acceptance of Terms</h2>
+        <p class="text-[var(--text-secondary)]">By accessing and using Campus Plug ("the Platform"), you agree to be bound by these Terms & Conditions. If you do not agree, do not use the Platform.</p>
+      </div>
+
+      <div>
+        <h2 class="font-display font-bold text-base text-[var(--text-primary)] mb-2">2. Eligibility</h2>
+        <p class="text-[var(--text-secondary)]">You must be at least 16 years old to use the Platform.</p>
+      </div>
+
+      <div>
+        <h2 class="font-display font-bold text-base text-[var(--text-primary)] mb-2">3. Account Types</h2>
+        <p class="text-[var(--text-secondary)]">Two account types exist: <strong>Regular</strong> (can browse, purchase, and hire freelancers) and <strong>Seller</strong> (can also list items for sale and create showcase posts). You may upgrade from Regular to Seller at any time in Profile Settings.</p>
+      </div>
+
+      <div>
+        <h2 class="font-display font-bold text-base text-[var(--text-primary)] mb-2">4. Listing & Selling</h2>
+        <ul class="list-disc pl-5 text-[var(--text-secondary)] space-y-1">
+          <li>All listings must be accurately described with real photos.</li>
+          <li>Prohibited items include but are not limited to: counterfeit goods, weapons, drugs, and stolen property.</li>
+          <li>Campus Plug reserves the right to remove any listing or suspend accounts that violate these terms.</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="font-display font-bold text-base text-[var(--text-primary)] mb-2">5. Escrow & Payments</h2>
+        <p class="text-[var(--text-secondary)]">All transactions are processed through our Paystack-powered escrow system. Funds are held securely until the buyer confirms satisfaction. A 10% platform fee is deducted from each completed transaction. Refunds are subject to our dispute resolution process.</p>
+      </div>
+
+      <div>
+        <h2 class="font-display font-bold text-base text-[var(--text-primary)] mb-2">6. User Conduct</h2>
+        <ul class="list-disc pl-5 text-[var(--text-secondary)] space-y-1">
+          <li>Do not harass, threaten, or defraud other users.</li>
+          <li>Do not attempt to bypass the escrow system or conduct off-platform payments.</li>
+          <li>Do not create multiple accounts or impersonate others.</li>
+          <li>Report any violations to <a href="mailto:{{ SUPPORT_EMAIL }}" class="text-[var(--color-brand)] hover:underline">{{ SUPPORT_EMAIL }}</a>.</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="font-display font-bold text-base text-[var(--text-primary)] mb-2">7. Dispute Resolution</h2>
+        <p class="text-[var(--text-secondary)]">If a transaction goes wrong, users may open a dispute within 7 days of delivery. Campus Plug mediators will review the case and make a fair decision. All parties agree to abide by the mediator's final ruling.</p>
+      </div>
+
+      <div>
+        <h2 class="font-display font-bold text-base text-[var(--text-primary)] mb-2">8. Limitation of Liability</h2>
+        <p class="text-[var(--text-secondary)]">Campus Plug acts solely as an intermediary platform. We are not responsible for the quality, safety, or legality of items listed or services provided by users. We do not guarantee transaction success.</p>
+      </div>
+
+      <div>
+        <h2 class="font-display font-bold text-base text-[var(--text-primary)] mb-2">9. Privacy</h2>
+        <p class="text-[var(--text-secondary)]">We collect only the information necessary to provide our service (name, university affiliation, phone number, and profile data). We do not sell your data. Your payment information is handled securely by Paystack and is never stored on our servers.</p>
+      </div>
+
+      <div>
+        <h2 class="font-display font-bold text-base text-[var(--text-primary)] mb-2">10. Changes to Terms</h2>
+        <p class="text-[var(--text-secondary)]">Campus Plug reserves the right to modify these terms at any time. Users will be notified of material changes via email or platform notification. Continued use after changes constitutes acceptance.</p>
+      </div>
+
+      <div>
+        <h2 class="font-display font-bold text-base text-[var(--text-primary)] mb-2">11. Contact</h2>
+        <p class="text-[var(--text-secondary)]">For reports, support, or inquiries, email us at <a href="mailto:{{ SUPPORT_EMAIL }}" class="text-[var(--color-brand)] hover:underline font-semibold">{{ SUPPORT_EMAIL }}</a>. We aim to respond within 24 hours.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}

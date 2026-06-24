@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+
+{% block title %}Browse Freelance Gigs - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-7xl mx-auto px-6 py-6 relative z-10">
+  
+  <!-- Header row with stats & action -->
+  <div data-aos="fade-up" class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 mb-12">
+    <div>
+      <h1 class="font-display font-extrabold text-2xl tracking-tight text-[var(--text-primary)]">Student Freelance Bid Board</h1>
+      <p class="font-sans text-xs text-[var(--text-secondary)] mt-1">
+        Fund your studies by taking tutoring, design, translation, or cleaning gigs from student clients.
+      </p>
+    </div>
+    
+    <div class="flex items-center gap-4">
+      <a href="{{ url_for('freelance.create_gig') }}" class="px-6 py-3.5 rounded-xl bg-gradient-to-tr from-purple-600 to-amber-500 text-white font-sans font-bold text-xs shadow-md btn-lift flex items-center gap-2">
+        <i data-lucide="plus-circle" class="w-4 h-4"></i> Post A Gig Task
+      </a>
+    </div>
+  </div>
+
+  <!-- Search + Filter block -->
+  <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-8 items-start">
+    
+    <!-- Sidebar Filters -->
+    <aside class="filter-sidebar bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl shadow-sm lg:sticky lg:top-24 self-start">
+      <form action="{{ url_for('freelance.browse') }}" method="GET" class="filter-sidebar-form">
+
+        <div class="filter-sidebar-header">
+          <span class="filter-sidebar-title">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+            Filter Gigs
+          </span>
+          <a href="{{ url_for('freelance.browse') }}" class="filter-sidebar-reset">
+            Reset
+          </a>
+        </div>
+
+        <div class="filter-sidebar-body">
+
+          <!-- Search -->
+          <div class="filter-block">
+            <label class="filter-label" for="gig-search">Search</label>
+            <div class="filter-search-wrap">
+              <input id="gig-search" type="text" name="search" value="{{ search }}" placeholder="Search gigs..."
+                     class="filter-input filter-search-input">
+              <i data-lucide="search" class="filter-search-icon"></i>
+            </div>
+          </div>
+
+          <!-- Category -->
+          <details class="filter-group" {% if category_f %}open{% endif %}>
+            <summary class="filter-group-summary">
+              <span>Job Category</span>
+              <i data-lucide="chevron-down" class="filter-group-chevron"></i>
+            </summary>
+            <div class="filter-group-content">
+              <label class="filter-option">
+                <input type="radio" name="category" value="" {% if not category_f %}checked{% endif %} class="filter-submit-input filter-radio">
+                <span class="filter-option-text {% if not category_f %}is-active{% endif %}">All Categories</span>
+              </label>
+              {% for cat in GIG_CATEGORIES %}
+              <label class="filter-option {% if loop.index > 5 %}filter-option-hidden{% endif %}" data-filter-expand-item>
+                <input type="radio" name="category" value="{{ cat }}" {% if category_f == cat %}checked{% endif %} class="filter-submit-input filter-radio">
+                <span class="filter-option-text {% if category_f == cat %}is-active{% endif %}">{{ cat }}</span>
+              </label>
+              {% endfor %}
+              {% if GIG_CATEGORIES|length > 5 %}
+              <button type="button" class="filter-show-more" data-filter-expand="category" data-more-label="Show {{ GIG_CATEGORIES|length - 5 }} more" data-less-label="Show less">
+                Show {{ GIG_CATEGORIES|length - 5 }} more
+              </button>
+              {% endif %}
+            </div>
+          </details>
+
+          <!-- Campus -->
+          <details class="filter-group" {% if university_f %}open{% endif %}>
+            <summary class="filter-group-summary">
+              <span>Client Campus</span>
+              <i data-lucide="chevron-down" class="filter-group-chevron"></i>
+            </summary>
+            <div class="filter-group-content">
+              <select name="university" class="filter-input filter-select filter-submit-input">
+                <option value="" {% if not university_f %}selected{% endif %}>All Campuses</option>
+                {% for uni in UNIVERSITIES %}
+                <option value="{{ uni }}" {% if university_f == uni %}selected{% endif %}>{{ uni }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </details>
+
+          <!-- Work Location -->
+          <details class="filter-group" {% if remote_f %}open{% endif %}>
+            <summary class="filter-group-summary">
+              <span>Work Location</span>
+              <i data-lucide="chevron-down" class="filter-group-chevron"></i>
+            </summary>
+            <div class="filter-group-content">
+              <label class="filter-option">
+                <input type="radio" name="remote_friendly" value="" {% if not remote_f %}checked{% endif %} class="filter-submit-input filter-radio">
+                <span class="filter-option-text {% if not remote_f %}is-active{% endif %}">Any Location</span>
+              </label>
+              <label class="filter-option">
+                <input type="radio" name="remote_friendly" value="yes" {% if remote_f == 'yes' %}checked{% endif %} class="filter-submit-input filter-radio">
+                <span class="filter-option-text {% if remote_f == 'yes' %}is-active{% endif %}">Remote Friendly</span>
+              </label>
+              <label class="filter-option">
+                <input type="radio" name="remote_friendly" value="no" {% if remote_f == 'no' %}checked{% endif %} class="filter-submit-input filter-radio">
+                <span class="filter-option-text {% if remote_f == 'no' %}is-active{% endif %}">In-Person</span>
+              </label>
+            </div>
+          </details>
+
+          <!-- Budget -->
+          <details class="filter-group" {% if min_budget or max_budget %}open{% endif %}>
+            <summary class="filter-group-summary">
+              <span>Budget (GHS)</span>
+              <i data-lucide="chevron-down" class="filter-group-chevron"></i>
+            </summary>
+            <div class="filter-group-content">
+              <div class="grid grid-cols-2 gap-2">
+                <input type="number" name="min_budget" value="{{ min_budget or '' }}" placeholder="Min" step="0.01"
+                       class="filter-input">
+                <input type="number" name="max_budget" value="{{ max_budget or '' }}" placeholder="Max" step="0.01"
+                       class="filter-input">
+              </div>
+              <button type="submit" class="filter-apply-btn mt-2">Apply</button>
+            </div>
+          </details>
+
+        </div>
+      </form>
+    </aside>
+    </aside>
+
+    <!-- Main Grid Section -->
+    <div class="lg:col-span-3">
+
+      <!-- Active Filter Chips (Jumia style) -->
+      {% if search or university_f or category_f or remote_f or min_budget or max_budget %}
+        <div class="flex flex-wrap items-center gap-2 mb-6 bg-[var(--bg-secondary)] border border-[var(--color-border)] p-4 rounded-xl shadow-sm">
+          <span class="text-[10px] font-sans font-bold uppercase text-[var(--text-secondary)] mr-2 flex items-center gap-1.5">
+            <i data-lucide="tags" class="w-3.5 h-3.5 text-purple-500"></i> Active Filters:
+          </span>
+          
+          {% if search %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-purple-500/10 border border-purple-500/20 text-[11px] font-semibold text-purple-400">
+              Keyword: "{{ search }}"
+              <a href="{{ url_for('freelance.browse', university=university_f, category=category_f, remote_friendly=remote_f, min_budget=min_budget, max_budget=max_budget) }}" class="text-[var(--text-secondary)] hover:text-purple-500 transition ml-2">
+                <i data-lucide="x" class="w-3 h-3"></i>
+              </a>
+            </span>
+          {% endif %}
+
+          {% if university_f %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-purple-500/10 border border-purple-500/20 text-[11px] font-semibold text-purple-400">
+              Campus: {{ university_f }}
+              <a href="{{ url_for('freelance.browse', search=search, category=category_f, remote_friendly=remote_f, min_budget=min_budget, max_budget=max_budget) }}" class="text-[var(--text-secondary)] hover:text-purple-500 transition ml-2">
+                <i data-lucide="x" class="w-3 h-3"></i>
+              </a>
+            </span>
+          {% endif %}
+
+          {% if category_f %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-purple-500/10 border border-purple-500/20 text-[11px] font-semibold text-purple-400">
+              Category: {{ category_f }}
+              <a href="{{ url_for('freelance.browse', search=search, university=university_f, remote_friendly=remote_f, min_budget=min_budget, max_budget=max_budget) }}" class="text-[var(--text-secondary)] hover:text-purple-500 transition ml-2">
+                <i data-lucide="x" class="w-3 h-3"></i>
+              </a>
+            </span>
+          {% endif %}
+
+          {% if remote_f %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-purple-500/10 border border-purple-500/20 text-[11px] font-semibold text-purple-400">
+              Remote: {{ 'Yes' if remote_f == 'yes' else 'No' }}
+              <a href="{{ url_for('freelance.browse', search=search, university=university_f, category=category_f, min_budget=min_budget, max_budget=max_budget) }}" class="text-[var(--text-secondary)] hover:text-purple-500 transition ml-2">
+                <i data-lucide="x" class="w-3 h-3"></i>
+              </a>
+            </span>
+          {% endif %}
+
+          {% if min_budget or max_budget %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-purple-500/10 border border-purple-500/20 text-[11px] font-semibold text-purple-400">
+              Budget:
+              {% if min_budget and max_budget %}
+                GHS {{ min_budget }} - {{ max_budget }}
+              {% elif min_budget %}
+                &ge; GHS {{ min_budget }}
+              {% else %}
+                &le; GHS {{ max_budget }}
+              {% endif %}
+              <a href="{{ url_for('freelance.browse', search=search, university=university_f, category=category_f, remote_friendly=remote_f) }}" class="text-[var(--text-secondary)] hover:text-purple-500 transition ml-2">
+                <i data-lucide="x" class="w-3 h-3"></i>
+              </a>
+            </span>
+          {% endif %}
+
+          <a href="{{ url_for('freelance.browse') }}" class="text-[10px] font-bold text-amber-500 hover:underline hover:text-amber-400 ml-auto transition">
+            Reset Filters
+          </a>
+        </div>
+      {% endif %}
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for gig in gigs %}
+          <div data-aos="fade-up" data-aos-delay="{{ loop.index0 * 100 }}" class="bg-[var(--bg-secondary)] border border-[var(--color-border)] p-6 rounded-2xl shadow-md card-hover-lift flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-[10px] font-mono uppercase bg-amber-500/10 text-amber-500 px-2.5 py-1 rounded font-bold">
+                  {{ gig.category }}
+                </span>
+                
+                <span class="text-[10px] font-sans font-semibold {% if gig.remote_friendly %} text-green-500 {% else %} text-blue-400 {% endif %}">
+                  {% if gig.remote_friendly %}
+                    <i data-lucide="globe" class="inline w-3 h-3 mr-0.5 animate-spin-slow"></i> Remote Friendly
+                  {% else %}
+                    <i data-lucide="map-pin" class="inline w-3.5 h-3.5 mr-0.5"></i> On Campus
+                  {% endif %}
+                </span>
+              </div>
+
+              <a href="{{ url_for('freelance.detail', gig_id=gig.id) }}" class="font-display font-semibold text-md block mb-2 text-[var(--text-primary)] hover:text-[var(--color-brand)] transition-colors line-clamp-1">
+                {{ gig.title }}
+              </a>
+              <p class="font-sans text-xs text-[var(--text-secondary)] leading-relaxed mb-6 line-clamp-3">
+                {{ gig.description }}
+              </p>
+            </div>
+
+            <div class="border-t border-[var(--color-border)] pt-4 flex items-center justify-between">
+              <div>
+                <span class="text-[9px] font-mono block text-[var(--text-secondary)] uppercase">Budget</span>
+                <span class="font-display font-extrabold text-xs sm:text-xs text-[var(--color-success)]">
+                  {% if gig.budget_type == 'range' %}
+                    GHS {{ "{:,.2f}".format(gig.budget_min) }} - {{ "{:,.2f}".format(gig.budget) }}
+                  {% else %}
+                    GHS {{ "{:,.2f}".format(gig.budget) }}
+                  {% endif %}
+                </span>
+              </div>
+              
+              <div class="flex items-center gap-3">
+                <!-- Client Campus Tag -->
+                <div class="text-right">
+                  <span class="block text-[8px] font-mono text-[var(--text-secondary)] uppercase">Posted from</span>
+                  <span class="text-[10px] font-semibold text-[var(--text-primary)]">{{ gig.university }}</span>
+                </div>
+                <a href="{{ url_for('freelance.detail', gig_id=gig.id) }}" class="p-2 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--color-brand)] hover:text-white border border-[var(--color-border)] text-[var(--text-primary)] transition-all-smooth">
+                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <!-- Empty state -->
+          <div class="col-span-full py-24 bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl text-center shadow-lg">
+            <i data-lucide="search-code" class="w-16 h-16 text-[var(--text-secondary)] mx-auto mb-4 animate-bounce"></i>
+            <h3 class="font-display font-extrabold text-lg text-[var(--text-primary)] mb-1">No Gigs Found</h3>
+            <p class="font-sans text-xs text-[var(--text-secondary)] max-w-sm mx-auto mb-6">We couldn’t find any freelance gigs matching your selected criteria. Reset filters to see open listings.</p>
+            <a href="{{ url_for('freelance.browse') }}" class="px-5 py-2.5 rounded-xl bg-[var(--color-brand)] text-white font-sans font-semibold text-xs shadow-md hover:opacity-90 active:scale-95 transition-all-smooth">Restart Search</a>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Pagination row elements -->
+      {% if pagination and pagination.pages > 1 %}
+        <nav class="flex items-center justify-center gap-2 mt-12 bg-[var(--bg-secondary)] border border-[var(--color-border)] p-3 rounded-2xl shadow-sm w-fit mx-auto">
+          {% if pagination.has_prev %}
+            <a href="{{ url_for('freelance.browse', page=pagination.prev_num, search=search, university=university_f, category=category_f, min_budget=min_budget, max_budget=max_budget, remote_friendly=remote_f) }}"
+               class="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </a>
+          {% endif %}
+          
+          <span class="font-mono text-xs text-[var(--text-secondary)] px-4">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+          
+          {% if pagination.has_next %}
+            <a href="{{ url_for('freelance.browse', page=pagination.next_num, search=search, university=university_f, category=category_f, min_budget=min_budget, max_budget=max_budget, remote_friendly=remote_f) }}"
+               class="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </a>
+          {% endif %}
+        </nav>
+      {% endif %}
+
+    </div>
+  </div>
+</section>
+
+<script>
+  // Instant Auto-submit on change for Jumia-style sidebar filters
+  document.querySelectorAll('.filter-submit-input').forEach(element => {
+    element.addEventListener('change', () => {
+      element.closest('form').submit();
+    });
+  });
+</script>
+{% endblock %}

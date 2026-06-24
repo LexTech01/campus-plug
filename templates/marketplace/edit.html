@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Listing - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-xl mx-auto w-full px-6 py-8 relative z-10">
+  
+  <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-3xl p-8 sm:p-10 shadow-xl">
+    <div class="text-center mb-10">
+      <h1 class="font-display font-extrabold text-2xl text-[var(--text-primary)]">Edit Marketplace Listing</h1>
+      <p class="font-sans text-xs text-[var(--text-secondary)] mt-1">Review detail elements of your active upload</p>
+    </div>
+
+    <form action="{{ url_for('marketplace.edit_listing', listing_id=listing.id) }}" method="POST" enctype="multipart/form-data" class="validate-shake-form flex flex-col gap-1.5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      
+      <!-- Title -->
+      <div class="floating-label-group">
+        <input type="text" name="title" placeholder=" " required max="100" value="{{ form_data.title }}"
+               class="{% if errors.title %}shake-error{% endif %}">
+        <label>Listing Title</label>
+        {% if errors.title %}<span class="text-[10px] text-red-500 font-medium">{{ errors.title }}</span>{% endif %}
+      </div>
+
+      <!-- Description -->
+      <div class="floating-label-group">
+        <textarea name="description" rows="5" placeholder=" " required class="resize-none {% if errors.description %}shake-error{% endif %}">{{ form_data.description }}</textarea>
+        <label>Provide Detailed Specifications</label>
+        {% if errors.description %}<span class="text-[10px] text-red-500 font-medium">{{ errors.description }}</span>{% endif %}
+      </div>
+
+      <!-- Price (GHS) -->
+      <div class="grid grid-cols-3 gap-3">
+        <div class="floating-label-group">
+          <input type="number" name="price" placeholder=" " required step="0.01" min="0.01" value="{{ form_data.price }}"
+                 class="{% if errors.price %}shake-error{% endif %}">
+          <label>Price (GHS)</label>
+          {% if errors.price %}<span class="text-[10px] text-red-500 font-medium">{{ errors.price }}</span>{% endif %}
+        </div>
+        <div class="floating-label-group">
+          <input type="number" name="original_price" placeholder=" " step="0.01" min="0.01" value="{{ form_data.original_price }}"
+                 class="{% if errors.original_price %}shake-error{% endif %}">
+          <label>Original Price</label>
+          {% if errors.original_price %}<span class="text-[10px] text-red-500 font-medium">{{ errors.original_price }}</span>{% endif %}
+        </div>
+        <div class="floating-label-group">
+          <input type="number" name="quantity" placeholder=" " min="1" max="999" value="{{ form_data.quantity }}"
+                 class="{% if errors.quantity %}shake-error{% endif %}">
+          <label>Quantity</label>
+          {% if errors.quantity %}<span class="text-[10px] text-red-500 font-medium">{{ errors.quantity }}</span>{% endif %}
+        </div>
+      </div>
+
+      <!-- Category Filter Options -->
+      <div class="floating-label-group">
+        <select name="category" required class="{% if errors.category %}shake-error{% endif %}">
+          <option value="" selected hidden>Choose Product Category</option>
+          {% for cat in CATEGORIES %}
+            <option value="{{ cat }}" {% if form_data.category == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+        <label>Listing Category</label>
+        {% if errors.category %}<span class="text-[10px] text-red-500 font-medium">{{ errors.category }}</span>{% endif %}
+      </div>
+
+      <!-- Condition selector -->
+      <div class="floating-label-group">
+        <select name="condition" required class="{% if errors.condition %}shake-error{% endif %}">
+          <option value="" selected hidden>Select Asset Condition</option>
+          {% for cond in CONDITIONS %}
+            <option value="{{ cond }}" {% if form_data.condition == cond %}selected{% endif %}>{{ cond }}</option>
+          {% endfor %}
+        </select>
+        <label>Item Condition</label>
+        {% if errors.condition %}<span class="text-[10px] text-red-500 font-medium">{{ errors.condition }}</span>{% endif %}
+      </div>
+
+      <!-- University default -->
+      <div class="floating-label-group">
+        <select name="university" required class="{% if errors.university %}shake-error{% endif %}">
+          <option value="" selected hidden>Choose Campus Hub</option>
+          {% for uni in UNIVERSITIES %}
+            <option value="{{ uni }}" {% if form_data.university == uni %}selected{% endif %}>{{ uni }}</option>
+          {% endfor %}
+        </select>
+        <label>Campus Hub Location</label>
+        {% if errors.university %}<span class="text-[10px] text-red-500 font-medium">{{ errors.university }}</span>{% endif %}
+      </div>
+
+      <!-- Delivery Policy selector -->
+      <div class="floating-label-group">
+        <select name="delivery_policy" required class="{% if errors.delivery_policy %}shake-error{% endif %}">
+          <option value="" selected hidden>Set Delivery Option</option>
+          {% for policy in DELIVERY_POLICIES %}
+            <option value="{{ policy }}" {% if form_data.delivery_policy == policy %}selected{% endif %}>{{ policy }}</option>
+          {% endfor %}
+        </select>
+        <label>Pickup / Delivery Arrangement</label>
+        {% if errors.delivery_policy %}<span class="text-[10px] text-red-500 font-medium">{{ errors.delivery_policy }}</span>{% endif %}
+      </div>
+
+      <!-- Photos -->
+      <div class="mb-6">
+        <label class="block font-sans font-semibold text-[11px] uppercase tracking-wider text-[var(--text-secondary)] mb-2">Photos <span class="text-[var(--color-brand)]">(max 3)</span></label>
+
+        <!-- Existing photos (click to remove) -->
+        <div id="existing-photos" class="flex flex-wrap gap-2 mb-2">
+          {% for p in listing.photo_list %}
+            {% if not p.endswith('placeholder.jpg') %}
+            <div class="relative group existing-photo-item" data-url="{{ p }}">
+              <img src="{{ p }}" class="w-20 h-20 object-cover rounded-xl border border-[var(--color-border)]">
+              <button type="button" class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity" onclick="removeExistingPhoto(this)">&times;</button>
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        <input type="hidden" name="remove_photos" id="remove-photos" value="">
+
+        <input type="file" name="photos" multiple accept="image/*" id="photo-input"
+               class="block w-full text-xs text-[var(--text-secondary)] file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-500/10 file:text-purple-400 hover:file:bg-purple-500/20 cursor-pointer bg-[var(--bg-primary)] border border-[var(--color-border)] p-2 rounded-xl">
+        {% if errors.photos %}<span class="text-[10px] text-red-500 font-medium mt-1 block">{{ errors.photos }}</span>{% endif %}
+        <div id="photo-preview" class="grid grid-cols-3 gap-2 mt-2"></div>
+        <p class="text-[9px] text-[var(--text-secondary)] mt-1 font-sans">Click the X on existing photos to remove them. Add new photos to replace or supplement.</p>
+      </div>
+
+      <script>
+        var editFiles = [];
+        var editInput = document.getElementById('photo-input');
+        var editPreview = document.getElementById('photo-preview');
+        function updateEditPreview() {
+          editPreview.innerHTML = '';
+          for (var i = 0; i < Math.min(editFiles.length, 3); i++) {
+            var div = document.createElement('div');
+            div.className = 'relative group';
+            var img = document.createElement('img');
+            img.src = URL.createObjectURL(editFiles[i]);
+            img.className = 'w-full h-28 object-cover rounded-xl border border-[var(--color-border)]';
+            div.appendChild(img);
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity';
+            btn.innerHTML = '&times;';
+            btn.onclick = (function(idx) { return function() {
+              editFiles.splice(idx, 1);
+              updateEditPreview();
+              syncEditInput();
+            }; })(i);
+            div.appendChild(btn);
+            editPreview.appendChild(div);
+          }
+        }
+        function syncEditInput() {
+          var dt = new DataTransfer();
+          for (var i = 0; i < Math.min(editFiles.length, 3); i++) {
+            dt.items.add(editFiles[i]);
+          }
+          editInput.files = dt.files;
+        }
+        if (editInput) {
+          editInput.addEventListener('change', function() {
+            for (var i = 0; i < this.files.length; i++) {
+              if (editFiles.length >= 3) break;
+              editFiles.push(this.files[i]);
+            }
+            this.value = '';
+            updateEditPreview();
+            syncEditInput();
+          });
+        }
+        function removeExistingPhoto(btn) {
+          var item = btn.closest('.existing-photo-item');
+          var input = document.getElementById('remove-photos');
+          var urls = input.value ? input.value.split(',') : [];
+          urls.push(item.dataset.url);
+          input.value = urls.join(',');
+          item.remove();
+        }
+      </script>
+
+      <div class="flex items-center gap-3">
+        <a href="{{ url_for('marketplace.detail', listing_id=listing.id) }}" class="w-1/2 p-4 text-center rounded-xl border border-[var(--color-border)] text-xs font-sans font-bold hover:bg-[var(--bg-tertiary)] transition-colors">
+          Cancel
+        </a>
+        <button type="submit" class="w-1/2 py-4 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs btn-lift">
+          Save Changes
+        </button>
+      </div>
+
+    </form>
+  </div>
+</section>
+{% endblock %}

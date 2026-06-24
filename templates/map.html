@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block title %}Seller Map - Campus Plug{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  #seller-map { height: 65vh; border-radius: 1rem; }
+  .leaflet-popup-content-wrapper { border-radius: 16px !important; background: #1a1a2e !important; color: #eee !important; box-shadow: 0 8px 32px rgba(0,0,0,.6) !important; }
+  .leaflet-popup-tip { background: #1a1a2e !important; }
+  .leaflet-popup-content { margin: 10px 14px; font-family: system-ui, sans-serif; }
+  .map-popup { display: flex; align-items: center; gap: 10px; min-width: 180px; }
+  .map-popup img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(99,102,241,.4); }
+  .map-popup div { line-height: 1.3; }
+  .map-popup .name { font-weight: 700; font-size: 13px; color: #fff; }
+  .map-popup .uni { font-size: 10px; color: #94a3b8; }
+  .map-popup .loc { font-size: 10px; color: #34d399; }
+  .popup-link { display: inline-block; margin-top: 6px; font-size: 10px; font-weight: 600; color: #818cf8; text-decoration: none; }
+  .popup-link:hover { text-decoration: underline; }
+  #route-panel { display: none; }
+  #route-panel.active { display: flex; }
+  .snap-marker {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #a78bfa, #6366f1);
+    box-shadow: 0 0 12px rgba(99,102,241,.6), 0 0 30px rgba(99,102,241,.3);
+    border: 2px solid rgba(255,255,255,.3);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto px-6 py-8 relative z-10">
+  <div data-aos="fade-up" class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h2 class="font-display font-extrabold text-2xl text-[var(--text-primary)]">Seller Map</h2>
+      <p class="font-sans text-xs text-[var(--text-secondary)] mt-1">Find sellers and freelancers near you on campus</p>
+    </div>
+    <button id="route-toggle" class="px-4 py-2 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs shadow-md hover:scale-[1.02] transition-all-smooth active:scale-95 flex items-center gap-2 self-start">
+      <i data-lucide="route" class="w-4 h-4"></i> Get Directions
+    </button>
+  </div>
+
+  <div data-aos="zoom-in" class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl p-2 shadow-xl">
+    <div id="seller-map"></div>
+  </div>
+
+  <!-- Route Panel -->
+  <div id="route-panel" data-aos="fade-up" class="mt-4 p-4 rounded-2xl bg-[var(--bg-secondary)] border border-[var(--color-border)] shadow-xl flex-col gap-3">
+    <div class="flex items-center gap-2 mb-1">
+      <i data-lucide="route" class="w-4 h-4 text-[var(--color-brand)]"></i>
+      <span class="font-sans font-bold text-xs text-[var(--text-primary)]">Directions</span>
+      <span id="route-info" class="text-[10px] font-mono text-[var(--text-secondary)] ml-auto"></span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="floating-label-group">
+        <input type="text" id="route-from" placeholder=" " value="KNUST, Kumasi, Ghana">
+        <label>From (address or lat,lng)</label>
+      </div>
+      <div class="floating-label-group">
+        <input type="text" id="route-to" placeholder=" " value="Univ. of Ghana, Legon, Ghana">
+        <label>To (address or lat,lng)</label>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap">
+      <button id="route-go" class="px-5 py-2.5 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs shadow-md hover:scale-[1.02] transition-all-smooth active:scale-95 flex items-center gap-2">
+        <i data-lucide="navigation" class="w-4 h-4"></i> Get Route
+      </button>
+      <button id="route-clear" class="px-5 py-2.5 rounded-xl border border-[var(--color-border)] text-[var(--text-secondary)] font-sans font-bold text-xs hover:bg-[var(--bg-tertiary)] transition-all-smooth flex items-center gap-2">
+        Clear
+      </button>
+      <button id="route-set-from" class="px-4 py-2 rounded-xl border border-dashed border-[var(--color-border)] text-[var(--text-secondary)] font-sans font-bold text-[10px] hover:bg-[var(--bg-tertiary)] transition-all-smooth flex items-center gap-1.5">
+        <i data-lucide="crosshair" class="w-3 h-3"></i> Pick Start on Map
+      </button>
+      <button id="route-set-to" class="px-4 py-2 rounded-xl border border-dashed border-[var(--color-border)] text-[var(--text-secondary)] font-sans font-bold text-[10px] hover:bg-[var(--bg-tertiary)] transition-all-smooth flex items-center gap-1.5">
+        <i data-lucide="crosshair" class="w-3 h-3"></i> Pick End on Map
+      </button>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const sellers = {{ sellers | tojson | safe }};
+
+    const map = L.map('seller-map', {
+      center: [7.9465, -1.0232],
+      zoom: 7,
+      maxBounds: [[4.5, -3.5], [11.5, 1.5]],
+      maxBoundsViscosity: 1.0,
+      minZoom: 7
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '',
+      maxZoom: 18
+    }).addTo(map);
+
+    // Seller markers — Snapchat-style glowing circles
+    const colors = ['#6366f1', '#a78bfa', '#f472b6', '#34d399', '#fbbf24', '#f97316'];
+    const bounds = [];
+    sellers.forEach((s, i) => {
+      const color = colors[i % colors.length];
+
+      // Glow ring (underneath)
+      L.circleMarker([s.lat, s.lng], {
+        radius: 20,
+        fillColor: color,
+        color: color,
+        weight: 0,
+        fillOpacity: .12
+      }).addTo(map);
+
+      // Main marker (on top — receives clicks)
+      const marker = L.circleMarker([s.lat, s.lng], {
+        radius: 10,
+        fillColor: color,
+        color: color,
+        weight: 2,
+        opacity: .5,
+        fillOpacity: .9
+      }).addTo(map);
+
+      bounds.push([s.lat, s.lng]);
+
+      const popupHtml = `
+        <div class="map-popup">
+          <img src="${s.avatar}" alt="${s.name}">
+          <div>
+            <div class="name">${s.name}</div>
+            <div class="uni">${s.university}</div>
+            ${s.location_name ? `<div class="loc">📍 ${s.location_name}</div>` : ''}
+            <a href="/auth/user/${s.id}" class="popup-link">View Profile →</a>
+          </div>
+        </div>
+      `;
+      marker.bindPopup(popupHtml);
+    });
+
+    if (bounds.length > 0) {
+      map.fitBounds(bounds, { padding: [50, 50] });
+    }
+
+    // --- Routing ---
+    let routeLine = null;
+    let routeMarkers = [];
+    let pickingFor = null;
+
+    function clearRoute() {
+      if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+      routeMarkers.forEach(m => map.removeLayer(m));
+      routeMarkers = [];
+      document.getElementById('route-info').textContent = '';
+    }
+
+    function parseCoord(str) {
+      const parts = str.split(',').map(s => parseFloat(s.trim()));
+      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) return { lat: parts[0], lon: parts[1] };
+      return null;
+    }
+
+    async function resolveLocation(str) {
+      const coord = parseCoord(str);
+      if (coord) return coord;
+      const res = await fetch(`/map/geocode?q=${encodeURIComponent(str + ', Ghana')}`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Could not find location');
+      }
+      return await res.json();
+    }
+
+    async function getRoute(from, to) {
+      clearRoute();
+      document.getElementById('route-info').textContent = 'Loading...';
+
+      try {
+        const f = await resolveLocation(from);
+        const t = await resolveLocation(to);
+
+        const routeUrl = `https://router.project-osrm.org/route/v1/driving/${f.lon},${f.lat};${t.lon},${t.lat}?overview=full&geometries=geojson`;
+        const routeRes = await fetch(routeUrl).then(r => r.json());
+
+        if (routeRes.code !== 'Ok') throw new Error('No driving route found');
+
+        const coords = routeRes.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+        routeLine = L.polyline(coords, { color: '#6366f1', weight: 4, opacity: 0.8 }).addTo(map);
+
+        const distance = (routeRes.routes[0].distance / 1000).toFixed(1);
+        const duration = Math.round(routeRes.routes[0].duration / 60);
+        document.getElementById('route-info').textContent = `${distance} km — ${duration} min driving`;
+
+        const icon = L.divIcon({ html: '<div style="background:#6366f1;width:10px;height:10px;border-radius:50%;border:2px solid #fff"></div>', iconSize: [10, 10], className: '' });
+        routeMarkers = [
+          L.marker([f.lat, f.lon], { icon }).addTo(map).bindPopup(from),
+          L.marker([t.lat, t.lon], { icon }).addTo(map).bindPopup(to)
+        ];
+        map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+      } catch (err) {
+        document.getElementById('route-info').textContent = err.message;
+      }
+    }
+
+    function startPicking(target) {
+      pickingFor = target;
+      map.getContainer().style.cursor = 'crosshair';
+      document.getElementById('route-info').textContent = 'Click on the map to set point...';
+    }
+
+    map.on('click', (e) => {
+      if (!pickingFor) return;
+      const lat = e.latlng.lat.toFixed(5);
+      const lng = e.latlng.lng.toFixed(5);
+      document.getElementById(pickingFor).value = `${lat},${lng}`;
+      map.getContainer().style.cursor = '';
+      document.getElementById('route-info').textContent = 'Point set. Click Get Route.';
+      pickingFor = null;
+    });
+
+    document.getElementById('route-toggle').addEventListener('click', () => {
+      document.getElementById('route-panel').classList.toggle('active');
+    });
+
+    document.getElementById('route-go').addEventListener('click', () => {
+      const from = document.getElementById('route-from').value.trim();
+      const to = document.getElementById('route-to').value.trim();
+      if (from && to) getRoute(from, to);
+    });
+
+    document.getElementById('route-clear').addEventListener('click', clearRoute);
+    document.getElementById('route-set-from').addEventListener('click', () => startPicking('route-from'));
+    document.getElementById('route-set-to').addEventListener('click', () => startPicking('route-to'));
+
+    document.getElementById('route-from').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('route-go').click(); });
+    document.getElementById('route-to').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('route-go').click(); });
+  });
+</script>
+{% endblock %}

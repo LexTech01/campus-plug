@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}Post a Task Hub - Campus Plug Gigs{% endblock %}
+
+{% block content %}
+<section class="max-w-xl mx-auto w-full px-6 py-8 relative z-10">
+  
+  <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-3xl p-8 sm:p-10 shadow-xl glass-card">
+    <div class="text-center mb-10">
+      <h1 class="font-display font-extrabold text-2xl text-[var(--text-primary)]">Post a Freelance Gig</h1>
+      <p class="font-sans text-xs text-[var(--text-secondary)] mt-1">Hire skilled individuals on or off campus to solve your custom tasks</p>
+    </div>
+
+    <!-- Create gig form -->
+    <form action="{{ url_for('freelance.create_gig') }}" method="POST" class="validate-shake-form flex flex-col gap-5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      
+      <!-- Title -->
+      <div class="floating-label-group">
+        <input type="text" name="title" id="title" placeholder=" " required max="120" value="{{ form_data.title or '' }}"
+               class="{% if errors.title %}shake-error{% endif %} w-full text-xs p-3 rounded-xl border border-[var(--color-border)] bg-[var(--bg-primary)] outline-none text-[var(--text-primary)]">
+        <label for="title" class="text-xs">Gig Title (e.g. Tutoring for Econ 101, Website Logo, Academic Assistance)</label>
+        {% if errors.title %}<span class="text-[10px] text-red-500 font-medium mt-1 block">{{ errors.title }}</span>{% endif %}
+      </div>
+
+      <!-- Description -->
+      <div class="floating-label-group">
+        <textarea name="description" id="description" rows="5" placeholder=" " required class="resize-none {% if errors.description %}shake-error{% endif %} w-full text-xs p-3 rounded-xl border border-[var(--color-border)] bg-[var(--bg-primary)] outline-none text-[var(--text-primary)]">{{ form_data.description or '' }}</textarea>
+        <label for="description" class="text-xs">Job Description & Instructions (Requirements, deliverables, etc.)</label>
+        {% if errors.description %}<span class="text-[10px] text-red-500 font-medium mt-1 block">{{ errors.description }}</span>{% endif %}
+      </div>
+
+      <!-- Category Filter Options -->
+      <div class="floating-label-group">
+        <select name="category" id="category" required class="{% if errors.category %}shake-error{% endif %} w-full text-xs p-3 rounded-xl border border-[var(--color-border)] bg-[var(--bg-primary)] outline-none text-[var(--text-primary)]">
+          <option value="" selected hidden>Select Job Category</option>
+          {% for cat in GIG_CATEGORIES %}
+            <option value="{{ cat }}" {% if form_data.category == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+        <label for="category" class="text-xs">Gig Skill Category</label>
+        {% if errors.category %}<span class="text-[10px] text-red-500 font-medium mt-1 block">{{ errors.category }}</span>{% endif %}
+      </div>
+
+      <!-- Budget Type -->
+      <div class="floating-label-group">
+        <select name="budget_type" id="budget_type" required class="w-full text-xs p-3 rounded-xl border border-[var(--color-border)] bg-[var(--bg-primary)] outline-none text-[var(--text-primary)]">
+          <option value="fixed" {% if form_data.budget_type == 'fixed' or not form_data.budget_type %}selected{% endif %}>Fixed Budget Price</option>
+          <option value="range" {% if form_data.budget_type == 'range' %}selected{% endif %}>Budget Price Range (Min / Max)</option>
+        </select>
+        <label for="budget_type" class="text-xs">Budget Type</label>
+      </div>
+
+      <!-- Fixed Budget Input -->
+      <div id="fixed-budget-group" class="floating-label-group">
+        <input type="number" name="budget" id="budget_fixed" placeholder=" " step="0.01" min="1.0" value="{{ form_data.budget or '' }}"
+               class="{% if errors.budget %}shake-error{% endif %} w-full text-xs p-3 rounded-xl border border-[var(--color-border)] bg-[var(--bg-primary)] outline-none text-[var(--text-primary)]">
+        <label for="budget_fixed" class="text-xs">Fixed Budget Amount (GHS)</label>
+        {% if errors.budget %}<span class="text-[10px] text-red-500 font-medium mt-1 block">{{ errors.budget }}</span>{% endif %}
+      </div>
+
+      <!-- Range Budget Input -->
+      <div id="range-budget-group" class="grid grid-cols-2 gap-4 hidden">
+        <div class="floating-label-group mb-0">
+          <input type="number" name="budget_min" id="budget_min" placeholder=" " step="0.01" min="1.0" value="{{ form_data.budget_min or '' }}"
+                 class="w-full text-xs p-3 rounded-xl border border-[var(--color-border)] bg-[var(--bg-primary)] outline-none text-[var(--text-primary)]">
+          <label for="budget_min" class="text-xs">Minimum Budget (GHS)</label>
+        </div>
+        <div class="floating-label-group mb-0">
+          <input type="number" name="budget_max" id="budget_max" placeholder=" " step="0.01" min="1.0" value="{{ form_data.budget or '' }}"
+                 class="w-full text-xs p-3 rounded-xl border border-[var(--color-border)] bg-[var(--bg-primary)] outline-none text-[var(--text-primary)]">
+          <label for="budget_max" class="text-xs">Maximum Budget (GHS)</label>
+        </div>
+      </div>
+
+      <!-- Location Type Selection -->
+      <div class="floating-label-group">
+        <select name="location_type" id="location_type" required class="w-full text-xs p-3 rounded-xl border border-[var(--color-border)] bg-[var(--bg-primary)] outline-none text-[var(--text-primary)]">
+          <option value="Remote — any university" {% if form_data.location_type == 'Remote — any university' or not form_data.location_type %}selected{% endif %}>Remote — any university</option>
+          <option value="On-campus — specific university" {% if form_data.location_type == 'On-campus — specific university' %}selected{% endif %}>On-campus — specific university</option>
+        </select>
+        <label for="location_type" class="text-xs">Location Requirements</label>
+      </div>
+
+      <!-- On-Campus Specific University Selection -->
+      <div id="specific-university-group" class="floating-label-group hidden">
+        <select name="university" id="university_select" class="{% if errors.university %}shake-error{% endif %} w-full text-xs p-3 rounded-xl border border-[var(--color-border)] bg-[var(--bg-primary)] outline-none text-[var(--text-primary)]">
+          <option value="" selected hidden>Choose Campus Hub</option>
+          {% for uni in UNIVERSITIES %}
+            <option value="{{ uni }}" {% if form_data.university == uni or (not form_data.university and current_user.university == uni) %}selected{% endif %}>{{ uni }}</option>
+          {% endfor %}
+        </select>
+        <label for="university_select" class="text-xs">Campus Node Location</label>
+        {% if errors.university %}<span class="text-[10px] text-red-500 font-medium mt-1 block">{{ errors.university }}</span>{% endif %}
+      </div>
+
+      <!-- Deadline Date Picker -->
+      <div class="floating-label-group">
+        <input type="date" name="deadline" id="deadline" required value="{{ form_data.deadline or '' }}"
+               class="{% if errors.deadline %}shake-error{% endif %} w-full text-xs p-3 rounded-xl border border-[var(--color-border)] bg-[var(--bg-primary)] outline-none text-[var(--text-primary)]">
+        <label for="deadline" class="text-xs">Required Deadline Date</label>
+        {% if errors.deadline %}<span class="text-[10px] text-red-500 font-medium mt-1 block">{{ errors.deadline }}</span>{% endif %}
+      </div>
+
+      <!-- Safety warning -->
+      <div class="flex gap-3 bg-[var(--bg-primary)] border border-[var(--color-border)] p-4 rounded-2xl mb-4 shadow-sm">
+        <i data-lucide="shield-alert" class="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5"></i>
+        <div>
+          <span class="block text-[8px] font-mono text-[var(--text-secondary)] uppercase">Student Escrow Guarantee</span>
+          <p class="text-[10px] text-[var(--text-secondary)] leading-tight mt-0.5">
+            Bids are open for anyone. Once you accept a student's proposal, funds are securely locked in escrow. They are released only upon successful completion. Our flat 10% fee is deducted from the freelancer's payout.
+          </p>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <button type="submit" class="w-full py-4 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs btn-lift">
+        Post Task Gig Board
+      </button>
+
+    </form>
+  </div>
+</section>
+
+<!-- Script elements toggle handles -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const budgetType = document.getElementById('budget_type');
+    const fixedGroup = document.getElementById('fixed-budget-group');
+    const rangeGroup = document.getElementById('range-budget-group');
+    const budgetFixed = document.getElementById('budget_fixed');
+    const budgetMin = document.getElementById('budget_min');
+    const budgetMax = document.getElementById('budget_max');
+
+    function toggleBudget() {
+      if (budgetType.value === 'range') {
+        fixedGroup.classList.add('hidden');
+        rangeGroup.classList.remove('hidden');
+        budgetFixed.required = false;
+        budgetMin.required = true;
+        budgetMax.required = true;
+      } else {
+        fixedGroup.classList.remove('hidden');
+        rangeGroup.classList.add('hidden');
+        budgetFixed.required = true;
+        budgetMin.required = false;
+        budgetMax.required = false;
+      }
+    }
+
+    budgetType.addEventListener('change', toggleBudget);
+    toggleBudget();
+
+    const locationType = document.getElementById('location_type');
+    const uniGroup = document.getElementById('specific-university-group');
+    const uniSelect = document.getElementById('university_select');
+
+    function toggleLocation() {
+      if (locationType.value === 'On-campus — specific university') {
+        uniGroup.classList.remove('hidden');
+        uniSelect.required = true;
+      } else {
+        uniGroup.classList.add('hidden');
+        uniSelect.required = false;
+      }
+    }
+
+    locationType.addEventListener('change', toggleLocation);
+    toggleLocation();
+  });
+</script>
+{% endblock %}

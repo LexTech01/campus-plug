@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Hub Node Missing (404) - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-md mx-auto w-full px-6 py-24 relative z-10 text-center flex flex-col items-center">
+  
+  <div class="w-20 h-20 bg-purple-500/10 rounded-3xl flex items-center justify-center text-purple-400 mb-6 border border-purple-500/20 shadow-lg animate-bounce">
+    <i data-lucide="help-circle" class="w-10 h-10"></i>
+  </div>
+
+  <h1 class="font-display font-extrabold text-3xl text-[var(--text-primary)] mb-2">Campus Node Offline (404)</h1>
+  <p class="font-sans text-xs text-[var(--text-secondary)] leading-relaxed max-w-sm mb-8">
+    We couldn't track down this specific directory. The active link may have expired or a student vendor deleted their shop listing. 
+  </p>
+
+  <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
+    <a href="{{ url_for('index') }}" class="w-full text-center py-3 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs shadow-md btn-lift">
+      Back to Landing Page
+    </a>
+    <a href="{{ url_for('marketplace.browse') }}" class="w-full text-center py-3 rounded-xl border border-[var(--color-border)] text-xs font-sans font-bold hover:bg-[var(--bg-tertiary)] transition-colors bg-[var(--bg-secondary)] text-[var(--text-primary)]">
+      Browse Marketplace
+    </a>
+  </div>
+
+</section>
+{% endblock %}

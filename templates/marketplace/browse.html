@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+
+{% block title %}Browse Campus Marketplace - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-7xl mx-auto px-6 py-6 relative z-10">
+  
+  <!-- Header row with stats & action -->
+  <div data-aos="fade-up" class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 mb-12">
+    <div>
+      <h1 class="font-display font-extrabold text-2xl tracking-tight text-[var(--text-primary)]">Ghana Campus Marketplace</h1>
+      <p class="font-sans text-xs text-[var(--text-secondary)] mt-1">
+        Browse marketplace listings from sellers across Ghanaian university hubs and beyond.
+      </p>
+    </div>
+    
+    <div class="flex items-center gap-4">
+      {% if current_user.is_authenticated and current_user.account_type in ('seller', 'admin') %}
+      <a href="{{ url_for('marketplace.create_listing') }}" class="px-6 py-3.5 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs shadow-md btn-lift flex items-center gap-2">
+        <i data-lucide="plus" class="w-4 h-4"></i> Sell An Item
+      </a>
+      {% elif current_user.is_authenticated %}
+      <a href="{{ url_for('auth.settings') }}" class="px-6 py-3.5 rounded-xl border border-purple-500/20 text-purple-400 font-sans font-bold text-xs hover:bg-purple-500/10 transition-all-smooth flex items-center gap-2">
+        <i data-lucide="arrow-up" class="w-4 h-4"></i> Upgrade to Sell
+      </a>
+      {% else %}
+      <a href="{{ url_for('auth.register') }}" class="px-6 py-3.5 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs shadow-md btn-lift flex items-center gap-2">
+        <i data-lucide="plus" class="w-4 h-4"></i> Sell An Item
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Search + Filter block -->
+  <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-8 items-start">
+    
+    <!-- Sidebar Filters (Jumia-style compact) -->
+    <aside class="filter-sidebar bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl shadow-sm lg:sticky lg:top-24 self-start">
+      <form action="{{ url_for('marketplace.browse') }}" method="GET" class="filter-sidebar-form">
+
+        <div class="filter-sidebar-header">
+          <span class="filter-sidebar-title">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+            Filter
+          </span>
+          <a href="{{ url_for('marketplace.browse') }}" class="filter-sidebar-reset">
+            Reset
+          </a>
+        </div>
+
+        <div class="filter-sidebar-body">
+          <!-- Search -->
+          <div class="filter-block">
+            <label class="filter-label" for="marketplace-search">Search</label>
+            <div class="filter-search-wrap">
+              <input id="marketplace-search" type="text" name="search" value="{{ search }}" placeholder="Search products..."
+                     class="filter-input filter-search-input">
+              <i data-lucide="search" class="filter-search-icon"></i>
+            </div>
+          </div>
+
+          <!-- Sort -->
+          <div class="filter-block">
+            <label class="filter-label" for="marketplace-sort">Sort by</label>
+            <select id="marketplace-sort" name="sort_by" class="filter-input filter-select filter-submit-input">
+              <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest</option>
+              <option value="price_low" {% if sort_by == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+              <option value="price_high" {% if sort_by == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+            </select>
+          </div>
+
+          <!-- Category -->
+          <details class="filter-group" {% if category_f %}open{% endif %}>
+            <summary class="filter-group-summary">
+              <span>Category</span>
+              <i data-lucide="chevron-down" class="filter-group-chevron"></i>
+            </summary>
+            <div class="filter-group-content">
+              <label class="filter-option">
+                <input type="radio" name="category" value="" {% if not category_f %}checked{% endif %} class="filter-submit-input filter-radio">
+                <span class="filter-option-text {% if not category_f %}is-active{% endif %}">All Categories</span>
+              </label>
+              {% for cat in CATEGORIES %}
+                <label class="filter-option {% if loop.index > 5 %}filter-option-hidden{% endif %}" data-filter-expand-item>
+                  <input type="radio" name="category" value="{{ cat }}" {% if category_f == cat %}checked{% endif %} class="filter-submit-input filter-radio">
+                  <span class="filter-option-text {% if category_f == cat %}is-active{% endif %}">{{ cat }}</span>
+                </label>
+              {% endfor %}
+              {% if CATEGORIES|length > 5 %}
+                <button type="button" class="filter-show-more" data-filter-expand="category" data-more-label="Show {{ CATEGORIES|length - 5 }} more" data-less-label="Show less">
+                  Show {{ CATEGORIES|length - 5 }} more
+                </button>
+              {% endif %}
+            </div>
+          </details>
+
+          <!-- Campus -->
+          <details class="filter-group" {% if university_f %}open{% endif %}>
+            <summary class="filter-group-summary">
+              <span>Campus</span>
+              <i data-lucide="chevron-down" class="filter-group-chevron"></i>
+            </summary>
+            <div class="filter-group-content">
+              <select name="university" class="filter-input filter-select filter-submit-input">
+                <option value="" {% if not university_f %}selected{% endif %}>All Campuses</option>
+                {% for uni in UNIVERSITIES %}
+                  <option value="{{ uni }}" {% if university_f == uni %}selected{% endif %}>{{ uni }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </details>
+
+          <!-- Condition -->
+          <details class="filter-group" {% if condition_f %}open{% endif %}>
+            <summary class="filter-group-summary">
+              <span>Condition</span>
+              <i data-lucide="chevron-down" class="filter-group-chevron"></i>
+            </summary>
+            <div class="filter-group-content">
+              <select name="condition" class="filter-input filter-select filter-submit-input">
+                <option value="" {% if not condition_f %}selected{% endif %}>Any Condition</option>
+                {% for cond in CONDITIONS %}
+                  <option value="{{ cond }}" {% if condition_f == cond %}selected{% endif %}>{{ cond }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </details>
+
+          <!-- Price -->
+          <details class="filter-group" {% if min_price or max_price %}open{% endif %}>
+            <summary class="filter-group-summary">
+              <span>Price (GHS)</span>
+              <i data-lucide="chevron-down" class="filter-group-chevron"></i>
+            </summary>
+            <div class="filter-group-content">
+              <div class="filter-price-row">
+                <input type="number" name="min_price" value="{{ min_price or '' }}" placeholder="Min" step="0.01" class="filter-input filter-price-input">
+                <span class="filter-price-sep">-</span>
+                <input type="number" name="max_price" value="{{ max_price or '' }}" placeholder="Max" step="0.01" class="filter-input filter-price-input">
+              </div>
+              <button type="submit" class="filter-apply-btn">Apply</button>
+            </div>
+          </details>
+        </div>
+
+      </form>
+    </aside>
+
+    <!-- Main Grid Section -->
+    <div class="lg:col-span-3">
+
+      <!-- Active Filter Chips (Jumia style) -->
+      {% if search or university_f or category_f or condition_f or min_price or max_price %}
+        <div class="flex flex-wrap items-center gap-2 mb-6 bg-[var(--bg-secondary)] border border-[var(--color-border)] p-4 rounded-xl shadow-sm">
+          <span class="text-[10px] font-sans font-bold uppercase text-[var(--text-secondary)] mr-2 flex items-center gap-1.5">
+            <i data-lucide="tags" class="w-3.5 h-3.5 text-purple-500"></i> Active Filters:
+          </span>
+          
+          {% if search %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-purple-500/10 border border-purple-500/20 text-[11px] font-semibold text-purple-400">
+              Keyword: "{{ search }}"
+              <a href="{{ url_for('marketplace.browse', university=university_f, category=category_f, condition=condition_f, min_price=min_price, max_price=max_price, sort_by=sort_by) }}" class="text-[var(--text-secondary)] hover:text-purple-500 transition ml-2">
+                <i data-lucide="x" class="w-3 h-3"></i>
+              </a>
+            </span>
+          {% endif %}
+
+          {% if university_f %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-purple-500/10 border border-purple-500/20 text-[11px] font-semibold text-purple-400">
+              Campus: {{ university_f }}
+              <a href="{{ url_for('marketplace.browse', search=search, category=category_f, condition=condition_f, min_price=min_price, max_price=max_price, sort_by=sort_by) }}" class="text-[var(--text-secondary)] hover:text-purple-500 transition ml-2">
+                <i data-lucide="x" class="w-3 h-3"></i>
+              </a>
+            </span>
+          {% endif %}
+
+          {% if category_f %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-purple-500/10 border border-purple-500/20 text-[11px] font-semibold text-purple-400">
+              Category: {{ category_f }}
+              <a href="{{ url_for('marketplace.browse', search=search, university=university_f, condition=condition_f, min_price=min_price, max_price=max_price, sort_by=sort_by) }}" class="text-[var(--text-secondary)] hover:text-purple-500 transition ml-2">
+                <i data-lucide="x" class="w-3 h-3"></i>
+              </a>
+            </span>
+          {% endif %}
+
+          {% if condition_f %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-purple-500/10 border border-purple-500/20 text-[11px] font-semibold text-purple-400">
+              Condition: {{ condition_f }}
+              <a href="{{ url_for('marketplace.browse', search=search, university=university_f, category=category_f, min_price=min_price, max_price=max_price, sort_by=sort_by) }}" class="text-[var(--text-secondary)] hover:text-purple-500 transition ml-2">
+                <i data-lucide="x" class="w-3 h-3"></i>
+              </a>
+            </span>
+          {% endif %}
+
+          {% if min_price or max_price %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-purple-500/10 border border-purple-500/20 text-[11px] font-semibold text-purple-400">
+              Price: 
+              {% if min_price and max_price %}
+                GHS {{ min_price }} - {{ max_price }}
+              {% elif min_price %}
+                &ge; GHS {{ min_price }}
+              {% else %}
+                &le; GHS {{ max_price }}
+              {% endif %}
+              <a href="{{ url_for('marketplace.browse', search=search, university=university_f, category=category_f, condition=condition_f, sort_by=sort_by) }}" class="text-[var(--text-secondary)] hover:text-purple-500 transition ml-2">
+                <i data-lucide="x" class="w-3 h-3"></i>
+              </a>
+            </span>
+          {% endif %}
+
+          <a href="{{ url_for('marketplace.browse') }}" class="text-[10px] font-bold text-amber-500 hover:underline hover:text-amber-400 ml-auto transition">
+            Reset Filters
+          </a>
+        </div>
+      {% endif %}
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for listing in listings %}
+          <!-- Hover-to-preview next image configured via data-photos -->
+          <div data-aos="fade-up" data-aos-delay="{{ loop.index0 * 100 }}" class="listing-card bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl overflow-hidden card-hover-lift flex flex-col justify-between"
+               data-photos="{{ listing.photos }}">
+            
+            <div class="relative aspect-video overflow-hidden">
+              <img src="{{ listing.photo_list[0] }}" alt="listing-img" class="listing-card-img w-full h-full object-cover transition-transform duration-500 hover:scale-105">
+              
+              <!-- Condition Tag -->
+              <span class="absolute top-3 left-3 bg-[var(--bg-secondary)] text-[var(--text-primary)] text-[10px] font-mono font-bold px-2.5 py-1 rounded-md shadow-md border border-[var(--color-border)]">
+                {{ listing.condition }}
+              </span>
+              
+              <!-- Discount Badge -->
+              {% if listing.has_discount %}
+              <span class="absolute top-3 right-3 bg-green-500/90 text-white text-[10px] font-mono font-bold px-2 py-1 rounded-md shadow-md">
+                -{{ listing.discount_percent }}%
+              </span>
+              {% endif %}
+              
+              <!-- Campus Tag Badge -->
+              <span class="absolute bottom-3 right-3 bg-purple-600 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                <i data-lucide="map-pin" class="w-3 h-3"></i> {{ listing.university }}
+              </span>
+            </div>
+
+            <div class="p-5 flex-grow flex flex-col justify-between">
+              <div>
+                <span class="text-[10px] uppercase font-mono tracking-widest text-purple-400 font-bold block mb-1">{{ listing.category }}</span>
+                <a href="{{ url_for('marketplace.detail', listing_id=listing.id) }}" class="font-sans font-bold text-sm block mb-1 text-[var(--text-primary)] hover:text-[var(--color-brand)] transition-colors line-clamp-1">
+                  {{ listing.title }}
+                </a>
+                <p class="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed mb-4">
+                  {{ listing.description }}
+                </p>
+                
+                <!-- Pickup indicator -->
+                <span class="inline-flex items-center gap-1 text-[10px] font-sans font-semibold text-[var(--text-secondary)] bg-[var(--bg-tertiary)] py-1 px-2 rounded-md mb-4">
+                  <i data-lucide="truck" class="w-3.5 h-3.5 text-purple-500"></i> {{ listing.delivery_policy }}
+                </span>
+                {% if listing.quantity is not none and listing.quantity > 0 and listing.quantity <= 5 %}
+                <span class="inline-flex items-center gap-1 text-[10px] font-sans font-semibold text-amber-400 bg-amber-500/10 py-1 px-2 rounded-md mb-4 ml-1">
+                  <i data-lucide="package" class="w-3 h-3"></i> Only {{ listing.quantity }} left
+                </span>
+                {% endif %}
+              </div>
+
+              <div class="border-t border-[var(--color-border)] pt-4 flex items-center justify-between">
+                <div>
+                  <span class="text-[9px] font-mono block text-[var(--text-secondary)] uppercase">Price</span>
+                  <span class="font-display font-extrabold text-sm text-[var(--color-accent)]">
+                    {% if listing.has_discount %}
+                      <span class="line-through text-[var(--text-secondary)] mr-1">GHS {{ "{:,.2f}".format(listing.original_price) }}</span>
+                      GHS {{ "{:,.2f}".format(listing.price) }}
+                      <span class="text-[9px] ml-1 px-1 py-0.5 rounded bg-green-500/20 text-green-400 font-bold">-{{ listing.discount_percent }}%</span>
+                    {% else %}
+                      GHS {{ "{:,.2f}".format(listing.price) }}
+                    {% endif %}
+                  </span>
+                </div>
+                <a href="{{ url_for('marketplace.detail', listing_id=listing.id) }}" class="p-2 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--color-brand)] hover:text-white border border-[var(--color-border)] text-[var(--text-primary)] transition-all-smooth">
+                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </a>
+              </div>
+            </div>
+
+          </div>
+        {% else %}
+          <!-- Empty visual status -->
+          <div class="col-span-full py-24 bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl text-center shadow-lg">
+            <i data-lucide="search-code" class="w-16 h-16 text-[var(--text-secondary)] mx-auto mb-4 animate-bounce"></i>
+            <h3 class="font-display font-extrabold text-lg text-[var(--text-primary)] mb-1">No Listings Found</h3>
+            <p class="font-sans text-xs text-[var(--text-secondary)] max-w-sm mx-auto mb-6">We couldn’t find any student items matching your active filter options. Try clearing filters or searching for alternative keywords.</p>
+            <a href="{{ url_for('marketplace.browse') }}" class="px-5 py-2.5 rounded-xl bg-[var(--color-brand)] text-white font-sans font-semibold text-xs shadow-md hover:opacity-90 active:scale-95 transition-all-smooth">Restart Search</a>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Pagination row elements -->
+      {% if pagination and pagination.pages > 1 %}
+        <nav class="flex items-center justify-center gap-2 mt-12 bg-[var(--bg-secondary)] border border-[var(--color-border)] p-3 rounded-2xl shadow-sm w-fit mx-auto">
+          {% if pagination.has_prev %}
+            <a href="{{ url_for('marketplace.browse', page=pagination.prev_num, search=search, university=university_f, category=category_f, condition=condition_f, min_price=min_price, max_price=max_price, sort_by=sort_by) }}"
+               class="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </a>
+          {% endif %}
+          
+          <span class="font-mono text-xs text-[var(--text-secondary)] px-4">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+          
+          {% if pagination.has_next %}
+            <a href="{{ url_for('marketplace.browse', page=pagination.next_num, search=search, university=university_f, category=category_f, condition=condition_f, min_price=min_price, max_price=max_price, sort_by=sort_by) }}"
+               class="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </a>
+          {% endif %}
+        </nav>
+      {% endif %}
+
+    </div>
+  </div>
+</section>
+
+{% endblock %}

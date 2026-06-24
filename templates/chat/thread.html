@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat with {{ other_user.full_name }} - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-4xl mx-auto px-6 py-6 relative z-10">
+  
+  <a href="{{ url_for('chat.inbox') }}" class="inline-flex items-center gap-2 font-sans font-semibold text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors mb-6 pl-2 group">
+    <i data-lucide="arrow-left" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></i> Back to messages list
+  </a>
+
+  <!-- Context Bar if chat is around a listing or a gig -->
+  {% if context_item %}
+    <div class="mb-4 bg-[var(--bg-secondary)] border border-[var(--color-border)] p-4 rounded-2xl flex items-center justify-between gap-4 shadow-sm glass-card">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400">
+          {% if context_type == 'listing' %}
+            <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+          {% else %}
+            <i data-lucide="briefcase" class="w-5 h-5"></i>
+          {% endif %}
+        </div>
+        <div>
+          <span class="text-[8px] font-mono uppercase text-[var(--text-secondary)] tracking-wider">Conversation Context ({{ context_type }})</span>
+          <h4 class="font-display font-extrabold text-xs text-[var(--text-primary)]">{{ context_item.title }}</h4>
+        </div>
+      </div>
+      
+      <div>
+        {% if context_type == 'listing' %}
+          <a href="{{ url_for('marketplace.detail', listing_id=context_item.id) }}" class="px-4 py-2 rounded-xl bg-[var(--bg-primary)] border border-[var(--color-border)] text-[var(--text-primary)] font-sans font-bold text-[10px] hover:bg-[var(--bg-tertiary)] transition-all-smooth">
+            Inspect Item details
+          </a>
+        {% else %}
+          <a href="{{ url_for('freelance.detail', gig_id=context_item.id) }}" class="px-4 py-2 rounded-xl bg-[var(--bg-primary)] border border-[var(--color-border)] text-[var(--text-primary)] font-sans font-bold text-[10px] hover:bg-[var(--bg-tertiary)] transition-all-smooth">
+            Inspect Gig details
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[70vh] glass-card">
+    
+    <!-- Partner Info Header bar -->
+    <div class="px-6 py-4 border-b border-[var(--color-border)] bg-[rgba(255,255,255,0.01)] flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <img src="{{ other_user.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}" alt="avatar" class="w-10 h-10 rounded-full object-cover border border-[var(--color-border)]">
+        <div>
+          <h2 class="font-display font-extrabold text-sm text-[var(--text-primary)] leading-none mb-1">{{ other_user.full_name }}</h2>
+          <span class="text-[10px] font-mono text-purple-400 font-bold uppercase tracking-wider">{{ other_user.university }}</span>
+        </div>
+      </div>
+
+      <!-- Quick action info items -->
+      <div class="text-right text-[10px] font-mono text-[var(--text-secondary)]">
+        {% if other_user.phone %}
+          <span class="block">Contacts: <strong>{{ other_user.phone[:3] }}****{{ other_user.phone[-3:] }}</strong> ({{ other_user.momo_provider or 'No Momo Provider Selected' }})</span>
+        {% else %}
+          <span class="block">Contact: <strong>No phone provided</strong></span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Scrolling Bubble log feed -->
+    <div class="flex-grow p-6 overflow-y-auto flex flex-col gap-4 bg-[var(--bg-primary)]/40" id="chat-scroller">
+      {% for msg in messages %}
+        {% set is_sender = (msg.sender_id == current_user.id) %}
+        
+        <div class="flex flex-col max-w-[70%] {% if is_sender %} self-end items-end {% else %} self-start items-start {% endif %}" data-msg-id="{{ msg.id }}">
+          <!-- Text bubble -->
+          <div class="p-4 rounded-2xl text-xs leading-relaxed shadow-sm
+            {% if is_sender %} bg-[var(--color-brand)] text-white rounded-br-none {% else %} bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--color-border)] rounded-bl-none {% endif %}">
+            <p>{{ msg.body }}</p>
+          </div>
+          
+          <!-- Timestamp footer -->
+          <span class="text-[9px] font-mono text-[var(--text-secondary)] mt-1.5 px-1 select-none">
+            {{ msg.created_at.strftime('%I:%M %p') }}
+          </span>
+        </div>
+      {% else %}
+        <div class="text-center py-16 text-[var(--text-secondary)] text-xs" id="chat-empty">
+          Start messaging by sending a response reply below.
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Message submit box footer -->
+    <div class="px-6 py-4 border-t border-[var(--color-border)] bg-[rgba(255,255,255,0.01)]">
+      <form id="chat-form" action="{{ url_for('chat.send_message') }}" method="POST" class="flex gap-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="recipient_id" value="{{ other_user.id }}">
+        <input type="hidden" name="context_type" value="{{ context_type }}">
+        <input type="hidden" name="context_id" value="{{ context_id or '' }}">
+        
+        <input type="text" name="body" id="chat-input" required placeholder="Type your response to {{ other_user.full_name }}..." autocomplete="off"
+               class="flex-grow text-xs px-4 py-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--bg-primary)] text-[var(--text-primary)] outline-none focus:border-[var(--color-brand)] focus:ring-1 focus:ring-[var(--color-brand)]">
+        
+        <button type="submit" class="p-3.5 rounded-xl bg-[var(--color-brand)] hover:opacity-95 text-white shadow-md btn-lift flex items-center justify-center">
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+      </form>
+    </div>
+
+  </div>
+</section>
+
+<!-- Auto scroll and real-time polling code -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const scroller = document.getElementById('chat-scroller');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    
+    // Auto scroll bottom
+    if (scroller) {
+      scroller.scrollTop = scroller.scrollHeight;
+    }
+
+    const otherUserId = "{{ other_user.id }}";
+    const contextType = "{{ context_type }}";
+    const contextId = "{{ context_id or '' }}";
+    const currentUserId = {{ current_user.id }};
+
+    function getTrackedLastId() {
+      const messages = scroller.querySelectorAll('[data-msg-id]');
+      if (messages.length === 0) return 0;
+      let maxId = 0;
+      messages.forEach(el => {
+        const id = parseInt(el.getAttribute('data-msg-id'), 10);
+        if (id > maxId) maxId = id;
+      });
+      return maxId;
+    }
+
+    // append helpers
+    function appendMessageElement(msg) {
+      const isSender = (msg.sender_id === currentUserId);
+      const isExisting = scroller.querySelector(`[data-msg-id="${msg.id}"]`);
+      if (isExisting) return; // Prevent duplication
+
+      const container = document.createElement('div');
+      container.className = `flex flex-col max-w-[70%] ${isSender ? 'self-end items-end' : 'self-start items-start'}`;
+      container.setAttribute('data-msg-id', msg.id);
+
+      const bubble = document.createElement('div');
+      bubble.className = `p-4 rounded-2xl text-xs leading-relaxed shadow-sm ${isSender ? 'bg-purple-600 text-white rounded-br-none' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--color-border)] rounded-bl-none'}`;
+      
+      const p = document.createElement('p');
+      p.textContent = msg.body;
+      bubble.appendChild(p);
+
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'text-[9px] font-mono text-[var(--text-secondary)] mt-1.5 px-1 select-none';
+      
+      try {
+        // Parse "YYYY-MM-DD HH:MM:SS" or standard ISO
+        const dateParts = msg.created_at.split(' ');
+        if (dateParts.length === 2 && dateParts[1]) {
+          const hhmm = dateParts[1].substring(0, 5);
+          timeSpan.textContent = hhmm;
+        } else {
+          timeSpan.textContent = msg.created_at;
+        }
+      } catch(e) {
+        timeSpan.textContent = msg.created_at;
+      }
+
+      container.appendChild(bubble);
+      container.appendChild(timeSpan);
+
+      const emptyText = document.getElementById('chat-empty');
+      if (emptyText) emptyText.remove();
+
+      scroller.appendChild(container);
+      scroller.scrollTop = scroller.scrollHeight;
+    }
+
+    // Polling function
+    async function pollNewMessages() {
+      const lastId = getTrackedLastId();
+      try {
+        const url = `/chat/thread/${otherUserId}/messages?context_type=${contextType}&context_id=${contextId}&last_id=${lastId}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.messages && data.messages.length > 0) {
+            data.messages.forEach(msg => {
+              appendMessageElement(msg);
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to poll messages:', err);
+      }
+    }
+
+    // Poll every 5 seconds
+    if (scroller) {
+      setInterval(pollNewMessages, 5000);
+    }
+
+    // Ajax Form Submission
+    if (chatForm) {
+      const csrfToken = chatForm.querySelector('[name="csrf_token"]').value;
+
+      chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const bodyText = chatInput.value.trim();
+        if (!bodyText) return;
+
+        chatInput.value = '';
+
+        try {
+          const formData = new FormData(chatForm);
+          formData.set('body', bodyText);
+
+          const res = await fetch(chatForm.action, {
+            method: 'POST',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRFToken': csrfToken
+            },
+            body: formData
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.success) {
+              appendMessageElement(data.message);
+            }
+          } else {
+            console.error('AJAX fail, form reload');
+            location.reload();
+          }
+        } catch (err) {
+          console.error('Failed to send text instantly:', err);
+          location.reload();
+        }
+      });
+    }
+
+  });
+</script>
+{% endblock %}

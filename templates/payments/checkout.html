@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Secure Escrow Safeguard Checkout - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-xl mx-auto w-full px-6 py-8 relative z-10">
+  
+  <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-3xl p-8 sm:p-10 shadow-2xl relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full filter blur-lg"></div>
+
+    <div class="text-center mb-10">
+      <h1 class="font-display font-extrabold text-2xl text-[var(--text-primary)] mb-2">MoMo Escrow Checkout</h1>
+      <p class="font-sans text-xs text-[var(--text-secondary)]">Secure payments locked safely in escrow until delivery is verified.</p>
+    </div>
+
+    {% if listing %}
+      <!-- Product Summary Card -->
+      <div class="bg-[var(--bg-primary)] border border-[var(--color-border)] p-4 rounded-2xl mb-8 flex items-center gap-3.5 shadow-sm">
+        <img src="{{ listing.photo_list[0] }}" alt="listing-pic" class="w-16 h-16 rounded-xl object-cover border border-[var(--color-border)]">
+        <div>
+          <span class="text-[9px] uppercase font-mono tracking-widest text-purple-400 font-bold block mb-0.5">{{ listing.category }}</span>
+          <h3 class="font-display font-bold text-xs text-[var(--text-primary)] mb-0.5">{{ listing.title }}</h3>
+          <p class="font-sans text-[10px] text-[var(--text-secondary)]">Delivery: {{ listing.delivery_policy }}</p>
+        </div>
+      </div>
+    {% elif gig %}
+      <!-- Gig Summary Card -->
+      <div class="bg-[var(--bg-primary)] border border-[var(--color-border)] p-4 rounded-2xl mb-8 flex items-center gap-3.5 shadow-sm">
+        <div class="w-16 h-16 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-[var(--color-border)] flex-shrink-0">
+          <i data-lucide="briefcase" class="w-8 h-8"></i>
+        </div>
+        <div class="overflow-hidden">
+          <span class="text-[9px] uppercase font-mono tracking-widest text-amber-500 font-bold block mb-0.5">{{ gig.category }}</span>
+          <h3 class="font-display font-bold text-xs text-[var(--text-primary)] truncate mb-0.5">{{ gig.title }}</h3>
+          {% if proposal %}
+            <p class="font-sans text-[10px] text-[var(--text-secondary)]">Freelancer Proposer: <strong>{{ proposal.freelancer.full_name }}</strong></p>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Order Ledger details -->
+    <div class="border-b border-[var(--color-border)] pb-5 mb-5 text-xs flex flex-col gap-2.5">
+      <div class="flex items-center justify-between">
+        <span class="text-[var(--text-secondary)]">Upfront GHS Price</span>
+        <span class="font-semibold font-mono text-[var(--text-primary)]">GHS {{ "{:,.2f}".format(amount) }}</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-[var(--text-secondary)]">MoMo Escrow Handling</span>
+        <span class="font-semibold font-mono text-purple-400">GHS 0.00 (Escrow Covered)</span>
+      </div>
+      
+      <div class="border-t border-[var(--color-border)] pt-4 mt-1.5 flex items-center justify-between">
+        <span class="text-sm font-bold text-[var(--text-primary)]">Total Secure Authorization holding</span>
+        <span class="text-sm font-extrabold font-display text-[var(--color-accent)]">GHS {{ "{:,.2f}".format(amount) }}</span>
+      </div>
+    </div>
+
+    <form 
+      {% if listing %}
+        action="{{ url_for('payments.checkout', listing_id=listing.id) }}"
+      {% elif gig %}
+        action="{{ url_for('payments.checkout', gig_id=gig.id, proposal_id=proposal.id) }}"
+      {% endif %}
+      method="POST" class="validate-shake-form flex flex-col gap-1.5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      
+      <!-- Mobile Money phone details -->
+      <div class="floating-label-group">
+        <input type="text" name="momo_phone" placeholder=" " required value="{{ current_user.phone or '' }}"
+               class="{% if errors and errors.momo_phone %}shake-error{% endif %}">
+        <label>Your Mobile Money Phone (e.g. 024xxxxxxx)</label>
+      </div>
+
+      <!-- MoMo Provider selector -->
+      <div class="floating-label-group">
+        <select name="momo_provider" required>
+          <option value="" selected hidden>Select Mobile Money Network</option>
+          {% for provider in MOMO_PROVIDERS %}
+            <option value="{{ provider }}" {% if current_user.momo_provider == provider %}selected{% endif %}>{{ provider }}</option>
+          {% endfor %}
+        </select>
+        <label>Sender MoMo network</label>
+      </div>
+
+      <!-- Escrow Info block -->
+      <div class="flex gap-3 bg-[var(--bg-primary)] border border-[var(--color-border)] p-4 rounded-2xl mb-8 shadow-sm">
+        <i data-lucide="shield-check" class="w-6 h-6 text-[var(--color-success)] flex-shrink-0 mt-0.5 animate-pulse"></i>
+        <div>
+          <span class="block text-[8px] font-mono text-[var(--text-secondary)] uppercase">How Escrow Safeguards Work</span>
+          <p class="text-[10px] text-[var(--text-secondary)] leading-tight mt-0.5">
+            Your GHS cash is safely frozen by Campus Plug. The seller receives their payout only when you check delivery and click "Confirm Receipt & Release". You are eligible for a quick admin refund if dispute reports arise!
+          </p>
+        </div>
+      </div>
+
+      <!-- Submit buy -->
+      <button type="submit" class="w-full py-4 rounded-xl bg-gradient-to-tr from-purple-600 to-amber-500 hover:opacity-95 text-white font-sans font-bold text-xs shadow-md btn-lift flex items-center justify-center gap-1.5 cursor-pointer">
+        <i data-lucide="lock" class="w-4 h-4"></i> Initialize Secure Paystack MoMo Payment
+      </button>
+
+    </form>
+  </div>
+</section>
+{% endblock %}

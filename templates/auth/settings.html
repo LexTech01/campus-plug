@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile Settings - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-lg mx-auto w-full px-4 sm:px-6 py-4 relative z-10 flex flex-col items-center" style="min-height: calc(100dvh - 120px);">
+
+  <div data-aos="fade-up" class="w-full bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-3xl p-4 shadow-xl relative overflow-hidden flex flex-col flex-1">
+    <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full filter blur-lg"></div>
+
+    <div class="flex items-center gap-2.5 mb-2 flex-shrink-0">
+      <div class="relative flex-shrink-0">
+        <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-[var(--color-border)] bg-[var(--bg-primary)]" onclick="document.getElementById('avatar-input').click()" style="cursor:pointer">
+          <img src="{{ current_user.avatar or '/static/images/default-avatar.png' }}" class="w-full h-full object-cover" id="avatar-preview">
+        </div>
+        <label for="avatar-input" class="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-[var(--color-brand)] flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 transition-all-smooth">
+          <i data-lucide="camera" class="w-2.5 h-2.5 text-white"></i>
+        </label>
+        <input type="file" id="avatar-input" name="avatar" accept="image/png,image/jpeg,image/webp" class="hidden" onchange="document.getElementById('avatar-preview').src = URL.createObjectURL(this.files[0])">
+        {% if errors.avatar %}<span class="text-[10px] text-red-500 font-medium absolute -bottom-4 left-0 whitespace-nowrap">{{ errors.avatar }}</span>{% endif %}
+      </div>
+      <div class="flex-1 min-w-0">
+        <h2 class="font-display font-extrabold text-sm text-[var(--text-primary)] leading-tight">Profile Settings</h2>
+        <p class="font-sans text-[9px] text-[var(--text-secondary)] truncate">{{ current_user.email }}</p>
+      </div>
+      <div class="flex items-center gap-1 flex-shrink-0">
+        <span class="text-[7px] sm:text-[8px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border {% if current_user.is_admin %}text-rose-400 border-rose-500/20 bg-rose-500/5{% elif current_user.account_type == 'seller' %}text-amber-400 border-amber-500/20 bg-amber-500/5{% else %}text-purple-400 border-purple-500/20 bg-purple-500/5{% endif %}">
+          {% if current_user.is_admin %}admin{% else %}{{ current_user.account_type }}{% endif %}
+        </span>
+        {% if current_user.is_admin %}
+          <span class="text-[7px] sm:text-[8px] font-sans font-bold text-rose-400 whitespace-nowrap">Full Access</span>
+        {% elif current_user.account_type == 'regular' %}
+          <a href="{{ url_for('auth.upgrade_seller') }}" class="text-[7px] sm:text-[8px] font-sans font-bold text-[var(--color-brand)] hover:underline whitespace-nowrap">Upgrade</a>
+        {% endif %}
+        <button id="theme-toggle" class="p-1 rounded-full bg-[var(--bg-primary)] border border-[var(--color-border)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] hover:scale-105 transition-all-smooth" aria-label="Toggle Theme">
+          <i id="theme-sun" data-lucide="sun" class="w-3 h-3 hidden"></i>
+          <i id="theme-moon" data-lucide="moon" class="w-3 h-3"></i>
+        </button>
+        <a href="{{ url_for('auth.referrals') }}" class="p-1 rounded-full bg-[var(--bg-primary)] border border-[var(--color-border)] text-amber-400 hover:bg-[var(--bg-tertiary)] hover:scale-105 transition-all-smooth" aria-label="Referral Program" title="Refer & Earn">
+          <i data-lucide="gift" class="w-3 h-3"></i>
+        </a>
+      </div>
+    </div>
+
+    <div class="h-[1px] bg-[var(--color-border)] mb-2 flex-shrink-0"></div>
+
+    <form action="{{ url_for('auth.settings') }}" method="POST" enctype="multipart/form-data" class="validate-shake-form flex flex-col gap-2 flex-1 min-h-0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div class="floating-label-group">
+          <input type="text" name="full_name" placeholder=" " required value="{{ form_data.full_name or '' }}"
+                 class="{% if errors.full_name %}shake-error{% endif %}">
+          <label>Full Name</label>
+          {% if errors.full_name %}<span class="text-[10px] text-red-500 font-medium">{{ errors.full_name }}</span>{% endif %}
+        </div>
+        <div class="floating-label-group">
+          <input type="text" name="phone" placeholder=" " value="{{ form_data.phone or '' }}"
+                 class="{% if errors.phone %}shake-error{% endif %}">
+          <label>MoMo Phone</label>
+          {% if errors.phone %}<span class="text-[10px] text-red-500 font-medium">{{ errors.phone }}</span>{% endif %}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div class="floating-label-group">
+          <select name="momo_provider" class="{% if errors.momo_provider %}shake-error{% endif %}">
+            <option value="" selected hidden>MoMo Network</option>
+            {% for provider in MOMO_PROVIDERS %}
+              <option value="{{ provider }}" {% if form_data.momo_provider == provider %}selected{% endif %}>{{ provider }}</option>
+            {% endfor %}
+          </select>
+          <label>MoMo Network</label>
+          {% if errors.momo_provider %}<span class="text-[10px] text-red-500 font-medium">{{ errors.momo_provider }}</span>{% endif %}
+        </div>
+        <div class="floating-label-group">
+          <select name="university" class="{% if errors.university %}shake-error{% endif %}">
+            <option value="" selected hidden>Affiliation</option>
+            {% for uni in UNIVERSITIES %}
+              <option value="{{ uni }}" {% if form_data.university == uni %}selected{% endif %}>{{ uni }}</option>
+            {% endfor %}
+          </select>
+          <label>Affiliation</label>
+          {% if errors.university %}<span class="text-[10px] text-red-500 font-medium">{{ errors.university }}</span>{% endif %}
+        </div>
+      </div>
+
+      <div class="floating-label-group">
+        <textarea name="bio" rows="2" placeholder=" " class="resize-none">{{ form_data.bio or '' }}</textarea>
+        <label>Bio</label>
+      </div>
+
+      {% if current_user.account_type in ('seller', 'admin') %}
+      <div class="p-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--bg-primary)] flex-shrink-0">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="map-pin" class="w-3 h-3 text-emerald-400"></i>
+            <span class="text-[8px] font-mono font-bold uppercase tracking-wider text-[var(--text-secondary)]">Map Location</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button type="button" id="use-my-location" class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-sans text-[8px] font-bold hover:bg-emerald-500/20 transition-all-smooth">
+              <i data-lucide="crosshair" class="w-2.5 h-2.5"></i> GPS
+            </button>
+          </div>
+        </div>
+        <div id="location-status" class="text-[8px] text-emerald-400 font-sans mb-1 hidden"></div>
+
+        <div class="floating-label-group mb-1.5">
+          <input type="text" id="location-search" placeholder=" " autocomplete="off">
+          <label>Search place (e.g. KNUST, Accra Mall, Achimota)</label>
+        </div>
+        <div id="search-results" class="hidden mb-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--bg-primary)] max-h-32 overflow-y-auto"></div>
+
+        <input type="hidden" name="latitude" value="{{ form_data.latitude or '' }}" id="lat-input">
+        <input type="hidden" name="longitude" value="{{ form_data.longitude or '' }}" id="lng-input">
+        <div class="flex items-center gap-1.5">
+          <span id="coordinates-display" class="text-[9px] font-mono text-[var(--text-secondary)] {% if not form_data.latitude %}opacity-40{% endif %}">
+            {% if form_data.latitude %}{{ form_data.latitude }}, {{ form_data.longitude }}{% else %}No location set{% endif %}
+          </span>
+          {% if form_data.latitude %}
+          <button type="button" id="clear-location" class="text-red-400 hover:text-red-300 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          {% endif %}
+        </div>
+        <div class="floating-label-group mt-1">
+          <input type="text" name="location_name" placeholder=" " value="{{ form_data.location_name or '' }}" id="location-name-input">
+          <label>Label (e.g. My Dorm, Department)</label>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="mt-auto pt-2 flex-shrink-0">
+        <button type="submit" class="w-full py-3 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-sm shadow-md hover:shadow-lg hover:scale-[1.01] transition-all-smooth active:scale-95 flex items-center justify-center gap-2">
+          <i data-lucide="save" class="w-4 h-4"></i> Save Changes
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  <p class="font-sans text-[10px] text-[var(--text-secondary)] mt-2.5 flex-shrink-0 pb-2">
+    <a href="{{ url_for('auth.user_profile', user_id=current_user.id) }}" class="text-[var(--color-brand)] font-bold hover:underline">View public profile</a>
+  </p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var latInput = document.getElementById('lat-input');
+  var lngInput = document.getElementById('lng-input');
+  var nameInput = document.getElementById('location-name-input');
+  var coordDisplay = document.getElementById('coordinates-display');
+  var status = document.getElementById('location-status');
+
+  function setLocation(lat, lng, name) {
+    latInput.value = lat;
+    lngInput.value = lng;
+    if (name) nameInput.value = name;
+    coordDisplay.textContent = lat + ', ' + lng;
+    coordDisplay.classList.remove('opacity-40');
+    status.textContent = 'Location saved!';
+    status.classList.remove('hidden');
+    setTimeout(function() { status.classList.add('hidden'); }, 2000);
+  }
+
+  // GPS button
+  document.getElementById('use-my-location')?.addEventListener('click', function() {
+    if (!navigator.geolocation) {
+      status.textContent = 'Geolocation not supported';
+      status.classList.remove('hidden');
+      return;
+    }
+    status.textContent = 'Getting your location...';
+    status.classList.remove('hidden');
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      var lat = pos.coords.latitude.toFixed(6);
+      var lng = pos.coords.longitude.toFixed(6);
+      status.textContent = 'Coordinates captured. Fetching address...';
+      fetch('/map/geocode?q=' + encodeURIComponent(lat + ',' + lng))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var name = data.display_name ? data.display_name.split(',').slice(0, 3).join(',').trim() : '';
+          setLocation(lat, lng, name);
+        })
+        .catch(function() { setLocation(lat, lng, ''); });
+    }, function(err) {
+      status.textContent = err.code === 1 ? 'Location permission denied. Search for a place instead.' : 'Could not get location. Search for a place instead.';
+    }, { enableHighAccuracy: true, timeout: 10000 });
+  });
+
+  // Place search with debounce
+  var searchInput = document.getElementById('location-search');
+  var searchResults = document.getElementById('search-results');
+  var searchTimer;
+
+  searchInput?.addEventListener('input', function() {
+    clearTimeout(searchTimer);
+    var q = this.value.trim();
+    if (q.length < 3) { searchResults.classList.add('hidden'); return; }
+    searchTimer = setTimeout(function() {
+      fetch('/map/geocode?q=' + encodeURIComponent(q + ', Ghana'))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          searchResults.innerHTML = '';
+          if (data.error) {
+            searchResults.innerHTML = '<div class="p-2 text-xs text-[var(--text-secondary)]">Not found</div>';
+          } else {
+            var div = document.createElement('div');
+            div.className = 'p-2 hover:bg-[var(--bg-tertiary)] cursor-pointer text-xs text-[var(--text-primary)] border-b border-[var(--color-border)] last:border-0 flex items-center gap-2';
+            div.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400 flex-shrink-0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>' + (data.display_name || q) + '</span>';
+            div.addEventListener('click', function() {
+              setLocation(parseFloat(data.lat).toFixed(6), parseFloat(data.lon).toFixed(6), (data.display_name || '').split(',').slice(0, 3).join(',').trim());
+              searchResults.classList.add('hidden');
+              searchInput.value = (data.display_name || '').split(',')[0] || q;
+            });
+            searchResults.appendChild(div);
+            searchResults.classList.remove('hidden');
+          }
+        })
+        .catch(function() {});
+    }, 400);
+  });
+
+  document.addEventListener('click', function(e) {
+    if (searchResults && !e.target.closest('#location-search') && !e.target.closest('#search-results')) {
+      searchResults.classList.add('hidden');
+    }
+  });
+
+  // Clear location
+  document.getElementById('clear-location')?.addEventListener('click', function() {
+    latInput.value = '';
+    lngInput.value = '';
+    nameInput.value = '';
+    coordDisplay.textContent = 'No location set';
+    coordDisplay.classList.add('opacity-40');
+    searchInput.value = '';
+  });
+
+  // Avatar cache busting — force browser to reload the image after upload
+  var avatarImg = document.getElementById('avatar-preview');
+  if (avatarImg) {
+    var src = avatarImg.getAttribute('src');
+    if (src && !src.startsWith('blob:')) {
+      avatarImg.setAttribute('src', src.split('?')[0] + '?t=' + Date.now());
+    }
+  }
+</script>
+{% endblock %}

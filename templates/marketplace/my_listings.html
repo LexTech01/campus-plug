@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}My Listings - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto px-6 py-6 relative z-10">
+  
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-12 border-b border-[var(--color-border)] pb-6">
+    <div>
+      <h1 class="font-display font-extrabold text-2xl tracking-tight text-[var(--text-primary)]">My Campus Listings</h1>
+      <p class="font-sans text-xs text-[var(--text-secondary)] mt-1">Manage listings, edit specifications, or mark items as sold.</p>
+    </div>
+    {% if current_user.account_type in ('seller', 'admin') %}
+    <a href="{{ url_for('marketplace.create_listing') }}" class="px-5 py-3 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs shadow-md btn-lift flex items-center justify-center gap-1.5 bg-gradient-to-tr from-purple-600 to-amber-500">
+      <i data-lucide="plus" class="w-4 h-4"></i> Add New listing
+    </a>
+    {% endif %}
+  </div>
+
+  {% if listings %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {% for listing in listings %}
+        <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl overflow-hidden shadow-lg card-hover-lift flex flex-col justify-between">
+          
+          <div class="relative aspect-video">
+            <img src="{{ listing.photo_list[0] }}" alt="product" class="w-full h-full object-cover">
+            
+            <!-- Status Badge -->
+            <span class="absolute top-4 left-4 text-[9px] font-mono font-bold uppercase rounded-md shadow-md border px-2 py-1 bg-[var(--bg-secondary)]
+              {% if listing.status == 'active' %} text-green-500 border-green-500/20 {% else %} text-orange-400 border-orange-400/20 {% endif %}">
+              {{ listing.status }}
+            </span>
+            {% if listing.has_discount %}
+            <span class="absolute top-4 right-4 bg-green-500/90 text-white text-[10px] font-mono font-bold px-2 py-1 rounded-md shadow-md">
+              -{{ listing.discount_percent }}%
+            </span>
+            {% endif %}
+          </div>
+
+          <div class="p-6">
+            <span class="text-[10px] uppercase font-mono tracking-widest text-purple-400 font-bold block mb-1">{{ listing.category }}</span>
+            <h3 class="font-display font-bold text-sm text-[var(--text-primary)] mb-1 truncate">{{ listing.title }}</h3>
+            <p class="font-display font-extrabold text-xs text-[var(--color-accent)] mb-4">
+              {% if listing.has_discount %}
+                <span class="line-through text-[var(--text-secondary)] mr-1">GHS {{ "{:,.2f}".format(listing.original_price) }}</span>
+                GHS {{ "{:,.2f}".format(listing.price) }}
+                <span class="text-[8px] ml-1 px-1 py-0.5 rounded bg-green-500/20 text-green-400 font-bold">-{{ listing.discount_percent }}%</span>
+              {% else %}
+                GHS {{ "{:,.2f}".format(listing.price) }}
+              {% endif %}
+            </p>
+            
+            <!-- Details overview -->
+            <div class="bg-[var(--bg-primary)] p-3.5 rounded-xl border border-[var(--color-border)] text-[10px] text-[var(--text-secondary)] mb-6 flex flex-col gap-1 font-sans">
+              <span class="flex items-center justify-between">Delivery policy: <strong class="text-[var(--text-primary)]">{{ listing.delivery_policy }}</strong></span>
+              <span class="flex items-center justify-between">Est. Payout (90%): <strong class="text-[var(--color-success)] font-mono">GHS {{ "{:,.2f}".format(listing.fee_details.payout) }}</strong></span>
+              <span class="flex items-center justify-between">Stock: <strong class="{% if listing.quantity is not none and listing.quantity <= 5 %}text-amber-400{% else %}text-[var(--text-primary)]{% endif %} font-mono">{{ listing.quantity or 0 }}</strong></span>
+            </div>
+
+            <!-- Handlers buttons -->
+            <div class="border-t border-[var(--color-border)] pt-4 flex items-center justify-between gap-3">
+              <a href="{{ url_for('marketplace.detail', listing_id=listing.id) }}" class="w-1/3 py-2 text-center rounded-lg border border-[var(--color-border)] text-[10px] font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors">
+                View detail
+              </a>
+              <a href="{{ url_for('marketplace.edit_listing', listing_id=listing.id) }}" class="w-1/3 py-2 text-center rounded-lg bg-[var(--bg-tertiary)] text-[10px] font-semibold text-[var(--text-primary)] hover:bg-purple-500/10 hover:text-purple-400 transition-all-smooth">
+                Modify edit
+              </a>
+              
+              <!-- Delete form button -->
+              <form action="{{ url_for('marketplace.delete_listing', listing_id=listing.id) }}" method="POST" class="w-1/3" onsubmit="return confirm('Are you sure you want to delete this listing?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="w-full py-2 text-center rounded-lg bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white transition-all-smooth text-[10px] font-semibold">
+                  Remove delete
+                </button>
+              </form>
+            </div>
+          </div>
+
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <!-- Empty state list tracker -->
+    <div class="py-24 bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl text-center shadow-md max-w-lg mx-auto">
+      <i data-lucide="tag" class="w-16 h-16 text-[var(--text-secondary)] mx-auto mb-4"></i>
+      <h3 class="font-display font-extrabold text-lg text-[var(--text-primary)] mb-1">No Listings Posted Yet</h3>
+      <p class="font-sans text-xs text-[var(--text-secondary)] max-w-xs mx-auto mb-6">You haven’t listed any campus items for sale yet. Turn your unused stuff into GHS payouts!</p>
+      {% if current_user.account_type in ('seller', 'admin') %}
+      <a href="{{ url_for('marketplace.create_listing') }}" class="px-5 py-3 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs shadow-md hover:opacity-90 active:scale-95 transition-all-smooth bg-gradient-to-tr from-purple-600 to-amber-500">Post First Item</a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+</section>
+{% endblock %}

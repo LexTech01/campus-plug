@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - Campus Plug{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-[var(--bg-primary)]">
+  <div class="flex">
+    {% include 'admin/_sidebar.html' %}
+
+    <div class="flex-1 p-6 lg:p-8 ml-0 lg:ml-64">
+      <div class="max-w-7xl mx-auto">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+          <div>
+            <h1 class="text-2xl font-extrabold text-[var(--text-primary)]">Dashboard</h1>
+            <p class="text-sm text-[var(--text-secondary)] mt-1">Platform overview and key metrics</p>
+          </div>
+          <span class="text-xs font-mono text-[var(--text-secondary)]">{{ now().strftime('%d %b %Y, %H:%M') }}</span>
+        </div>
+
+        <!-- Revenue Banner -->
+        <div class="bg-gradient-to-r from-purple-700/40 to-indigo-800/40 border border-purple-500/20 rounded-2xl p-6 mb-8">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-mono text-purple-300 uppercase tracking-wider mb-1">Total Platform Revenue</p>
+              <h2 class="text-4xl font-black text-white font-mono">GHS {{ "{:,.2f}".format(metrics.total_revenue) }}</h2>
+              <p class="text-xs text-purple-200 mt-1">10% commission on all completed transactions</p>
+            </div>
+            <div class="p-3 bg-purple-500/20 rounded-2xl text-purple-300">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+
+          <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Users</span>
+              <span class="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </span>
+            </div>
+            <p class="text-3xl font-extrabold text-[var(--text-primary)] font-mono">{{ metrics.total_users }}</p>
+            <p class="text-xs text-green-500 mt-1">Registered accounts</p>
+          </div>
+
+          <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Listings</span>
+              <span class="p-2 bg-amber-500/10 rounded-lg text-amber-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              </span>
+            </div>
+            <p class="text-3xl font-extrabold text-[var(--text-primary)] font-mono">{{ metrics.total_listings }}</p>
+            <p class="text-xs text-[var(--text-secondary)] mt-1">Marketplace items</p>
+          </div>
+
+          <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Gigs</span>
+              <span class="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              </span>
+            </div>
+            <p class="text-3xl font-extrabold text-[var(--text-primary)] font-mono">{{ metrics.total_gigs }}</p>
+            <p class="text-xs text-[var(--text-secondary)] mt-1">Freelance projects</p>
+          </div>
+
+          <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Volume</span>
+              <span class="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </span>
+            </div>
+            <p class="text-3xl font-extrabold text-[var(--text-primary)] font-mono">GHS {{ "{:,.0f}".format(metrics.total_volume) }}</p>
+            <p class="text-xs text-[var(--text-secondary)] mt-1">Total cleared</p>
+          </div>
+
+        </div>
+
+        <!-- Secondary Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+
+          <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl p-5 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)] mb-1">In Escrow</p>
+              <p class="text-2xl font-extrabold text-yellow-500 font-mono">{{ metrics.held_escrow_count }}</p>
+              <p class="text-xs text-[var(--text-secondary)] mt-1">Awaiting release</p>
+            </div>
+            <div class="p-3 bg-yellow-500/10 rounded-xl text-yellow-500">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+          </div>
+
+          <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl p-5 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)] mb-1">Active Disputes</p>
+              <p class="text-2xl font-extrabold text-red-500 font-mono">{{ metrics.disputed_count }}</p>
+              <p class="text-xs text-[var(--text-secondary)] mt-1">Requires review</p>
+            </div>
+            <div class="p-3 bg-red-500/10 rounded-xl text-red-500">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- University Nodes & Audit Log -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <div class="lg:col-span-2 bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl p-6">
+            <h3 class="font-extrabold text-sm text-[var(--text-primary)] mb-4">University Distribution</h3>
+            <div class="flex flex-col gap-3">
+              {% for node in node_metrics %}
+              <div class="flex items-center justify-between p-3 bg-[var(--bg-primary)] border border-[var(--color-border)] rounded-lg">
+                <div>
+                  <p class="font-bold text-sm text-[var(--text-primary)]">{{ node.name }}</p>
+                  <div class="flex gap-3 mt-1 text-xs text-[var(--text-secondary)]">
+                    <span>{{ node.user_count }} users</span>
+                    <span>{{ node.listing_count }} listings</span>
+                    <span>{{ node.gig_count }} gigs</span>
+                  </div>
+                </div>
+                <div class="flex gap-1">
+                  <div class="w-16 h-1.5 rounded-full bg-[var(--bg-tertiary)] overflow-hidden">
+                    <div class="h-full rounded-full bg-purple-500" style="width: {{ (node.user_count / node_metrics|map(attribute='user_count')|sum * 100) if node_metrics|map(attribute='user_count')|sum > 0 else 0 }}%"></div>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl p-6">
+            <h3 class="font-extrabold text-sm text-[var(--text-primary)] mb-4">Recent Activity</h3>
+            {% if recent_logs %}
+            <div class="flex flex-col gap-3 max-h-80 overflow-y-auto pr-1" style="scrollbar-width: thin;">
+              {% for log in recent_logs %}
+              <div class="border-l-2 border-purple-500 pl-3 py-1 flex-shrink-0">
+                <p class="text-xs font-mono text-[var(--text-secondary)]">{{ log.created_at.strftime('%d %b %H:%M') }}</p>
+                <p class="text-sm font-bold text-[var(--text-primary)]">{{ log.action }}</p>
+                <p class="text-xs text-[var(--text-secondary)] truncate">{{ log.note }}</p>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-[var(--text-secondary)] italic text-center py-8">No recent admin activity</p>
+            {% endif %}
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

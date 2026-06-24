@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Put on a Showcase - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-2xl mx-auto px-6 py-6 relative z-10">
+
+  <!-- Header Section -->
+  <div class="mb-10">
+    <a href="{{ url_for('freelance.showcases_list') }}" class="inline-flex items-center gap-1 text-xs font-semibold text-purple-500 hover:underline mb-4">
+      <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back to feed
+    </a>
+    <h1 class="font-display font-extrabold text-2xl tracking-tight text-[var(--text-primary)]">Showcase Your Skill Set</h1>
+    <p class="font-sans text-xs text-[var(--text-secondary)] mt-1">
+      Advertise your professional services, show off something awesome you built, or pitch yourself directly to clients on Ghana hubs.
+    </p>
+  </div>
+
+  <!-- Form Wrapper -->
+  <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl p-8 shadow-lg">
+
+    <form action="{{ url_for('freelance.create_showcase') }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-6">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      
+      <!-- Showcase Title Input -->
+      <div>
+        <label for="title" class="block font-sans font-bold text-xs uppercase tracking-wider text-[var(--text-secondary)] mb-2">Showcase Tagline</label>
+        <input type="text" id="title" name="title" value="{{ form_data.title or '' }}" required placeholder="e.g., UI/UX Designer & Frontend Developer - Portfolio Showcase"
+               class="w-full text-xs p-3.5 rounded-xl border {% if errors.title %} border-[var(--color-error)] {% else %} border-[var(--color-border)] {% endif %} bg-[var(--bg-primary)] outline-none text-[var(--text-primary)] focus:border-[var(--color-brand)] focus:ring-1 focus:ring-[var(--color-brand)]">
+        {% if errors.title %}
+          <p class="text-[var(--color-error)] text-[10px] mt-1 font-semibold flex items-center gap-1">
+            <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> {{ errors.title }}
+          </p>
+        {% endif %}
+        <span class="block text-[10px] text-[var(--text-secondary)] mt-1">Write a captivating headline that briefly states what you do or what you achieved.</span>
+      </div>
+
+      <!-- Showcase Body/Content Statement -->
+      <div>
+        <label for="content" class="block font-sans font-bold text-xs uppercase tracking-wider text-[var(--text-secondary)] mb-2">What services do you offer? Describe your work</label>
+        <textarea id="content" name="content" rows="6" required placeholder="Describe your freelance services, listing tools, languages, or procedures you specialize in... (e.g. 'Highly specialized in react development, fast deliveries, logo designs, braids, or tutoring standard accounting')"
+                  class="w-full text-xs p-4 rounded-xl border {% if errors.content %} border-[var(--color-error)] {% else %} border-[var(--color-border)] {% endif %} bg-[var(--bg-primary)] outline-none text-[var(--text-primary)] focus:border-[var(--color-brand)] focus:ring-1 focus:ring-[var(--color-brand)] leading-relaxed">{{ form_data.content or '' }}</textarea>
+        {% if errors.content %}
+          <p class="text-[var(--color-error)] text-[10px] mt-1 font-semibold flex items-center gap-1">
+            <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> {{ errors.content }}
+          </p>
+        {% endif %}
+        <span class="block text-[10px] text-[var(--text-secondary)] mt-1">Give complete details about what packages, pricing, or turnaround times you support.</span>
+      </div>
+
+      <!-- Media Portfolios File upload -->
+      <div id="media-section">
+        <label class="block font-sans font-bold text-xs uppercase tracking-wider text-[var(--text-secondary)] mb-2">Portfolio Photos <span class="text-[var(--color-brand)]">(max 3)</span></label>
+        
+        <div class="border-2 border-dashed {% if errors.media %} border-[var(--color-error)] {% else %} border-[var(--color-border)] {% endif %} rounded-xl p-6 text-center cursor-pointer hover:border-[var(--color-brand)] hover:bg-[var(--color-brand-glow)] transition-all duration-300 relative"
+             id="drag-area">
+          <input type="file" id="media" name="media" multiple accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+          
+          <div class="flex flex-col items-center">
+            <div class="p-3 rounded-full bg-[var(--bg-primary)] text-purple-500 mb-3" id="icon-container">
+              <i data-lucide="images" class="w-6 h-6"></i>
+            </div>
+            <p class="text-xs font-bold text-[var(--text-primary)]" id="upload-status">Click to upload up to 3 images</p>
+            <p class="text-[10px] text-[var(--text-secondary)] mt-1">Allowed formats: PNG, JPG, JPEG, WEBP, GIF</p>
+          </div>
+        </div>
+        
+        <div id="photo-preview" class="grid grid-cols-3 gap-2 mt-2"></div>
+        
+        {% if errors.media %}
+          <p class="text-[var(--color-error)] text-[10px] mt-2 font-semibold flex items-center gap-1">
+            <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> {{ errors.media }}
+          </p>
+        {% endif %}
+      </div>
+
+      <!-- Submit and Control buttons -->
+      <div class="flex items-center justify-end gap-4 border-t border-[var(--color-border)] pt-6 mt-4">
+        <a href="{{ url_for('freelance.showcases_list') }}" class="px-5 py-3 rounded-xl border border-[var(--color-border)] hover:bg-[var(--bg-primary)] text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all-smooth">
+          Cancel
+        </a>
+        <button type="submit" class="px-6 py-3 rounded-xl bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white font-sans font-bold text-xs shadow-md btn-lift flex items-center gap-2">
+          <i data-lucide="check" class="w-4 h-4"></i> Publish Showcase
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+
+  <!-- Helpful advice -->
+  <div class="mt-8 p-5 bg-purple-500/5 border border-purple-500/10 rounded-2xl flex gap-4 items-start font-sans text-xs text-[var(--text-secondary)]">
+    <div class="p-2 rounded bg-purple-500/10 text-purple-400 flex-shrink-0">
+      <i data-lucide="info" class="w-4 h-4"></i>
+    </div>
+    <div>
+      <h4 class="font-display font-semibold text-xs text-[var(--text-primary)] mb-1">Make your showcase stand out</h4>
+      <p class="leading-relaxed">
+        Freelancers who upload high-quality work previews (such as design mocks, code snippets, or hair styling results) and clearly state their pricing packages receive up to <strong>4x more direct chats and bid conversions</strong> on Ghana university nodes!
+      </p>
+    </div>
+  </div>
+
+</section>
+
+<script>
+  var selectedFiles = [];
+  var fileInput = document.getElementById('media');
+  var dragArea = document.getElementById('drag-area');
+  var uploadStatus = document.getElementById('upload-status');
+  var iconContainer = document.getElementById('icon-container');
+  var preview = document.getElementById('photo-preview');
+
+  function updatePreview() {
+    preview.innerHTML = '';
+    for (var i = 0; i < Math.min(selectedFiles.length, 3); i++) {
+      var div = document.createElement('div');
+      div.className = 'relative group';
+      var img = document.createElement('img');
+      img.src = URL.createObjectURL(selectedFiles[i]);
+      img.className = 'w-full h-28 object-cover rounded-xl border border-[var(--color-border)]';
+      div.appendChild(img);
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity';
+      btn.innerHTML = '&times;';
+      btn.onclick = (function(idx) { return function() {
+        selectedFiles.splice(idx, 1);
+        updatePreview();
+        syncInput();
+      }; })(i);
+      div.appendChild(btn);
+      preview.appendChild(div);
+    }
+    uploadStatus.innerText = selectedFiles.length + ' of 3 images selected';
+    if (selectedFiles.length > 0) {
+      dragArea.classList.add('border-purple-500', 'bg-purple-500/5');
+      iconContainer.innerHTML = '<i data-lucide="check-circle" class="w-6 h-6 text-purple-500"></i>';
+    } else {
+      dragArea.classList.remove('border-purple-500', 'bg-purple-500/5');
+      iconContainer.innerHTML = '<i data-lucide="images" class="w-6 h-6"></i>';
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function syncInput() {
+    var dt = new DataTransfer();
+    for (var i = 0; i < Math.min(selectedFiles.length, 3); i++) {
+      dt.items.add(selectedFiles[i]);
+    }
+    fileInput.files = dt.files;
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener('change', function(e) {
+      for (var i = 0; i < this.files.length; i++) {
+        if (selectedFiles.length >= 3) break;
+        selectedFiles.push(this.files[i]);
+      }
+      this.value = '';
+      updatePreview();
+      syncInput();
+    });
+  }
+
+</script>
+{% endblock %}

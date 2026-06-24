@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ listing.title }} - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto px-6 py-8 relative z-10">
+  
+  <!-- Back navigation anchor -->
+  <a href="{{ url_for('marketplace.browse') }}" class="inline-flex items-center gap-2 font-sans font-semibold text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors mb-8 group pl-2">
+    <i data-lucide="arrow-left" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></i> Back to Campus Marketplace
+  </a>
+
+  <div class="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-8 md:gap-12">
+    
+    <!-- Left Hand Side: Image Gallery -->
+    <div class="lg:col-span-7 flex flex-col gap-4">
+      <div class="relative w-full aspect-video rounded-3xl overflow-hidden border border-[var(--color-border)] bg-[var(--bg-secondary)] shadow-lg">
+        <img id="primary-gallery" src="{{ listing.photo_list[0] }}" alt="product-image" class="w-full h-full object-cover">
+        
+        <span class="absolute top-4 left-4 bg-[var(--bg-secondary)] text-[var(--text-primary)] font-mono text-[10px] font-bold px-3 py-1.5 rounded-lg border border-[var(--color-border)] shadow-md">
+          {{ listing.condition }}
+        </span>
+      </div>
+      
+      <!-- Mini Thumbnails if they exist -->
+      {% if listing.photo_list|length > 1 %}
+        <div class="flex items-center gap-2.5 overflow-x-auto pb-2">
+          {% for p in listing.photo_list %}
+            <button onclick="document.getElementById('primary-gallery').src='{{ p }}'"
+                    class="w-16 h-16 rounded-xl border border-[var(--color-border)] overflow-hidden flex-shrink-0 hover:border-[var(--color-brand)] transition-colors focus:outline-none">
+              <img src="{{ p }}" alt="thumb" class="w-full h-full object-cover">
+            </button>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Right Hand Side: Title, Details, Action CTAs -->
+    <div class="lg:col-span-5 flex flex-col justify-between h-full bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-3xl p-8 shadow-xl">
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-[11px] font-mono uppercase bg-purple-500/10 text-purple-400 px-2.5 py-1 rounded-md font-bold">
+            {{ listing.category }}
+          </span>
+          
+          <span class="text-[10px] uppercase font-mono font-bold text-[var(--text-secondary)]">
+            Uploaded {{ listing.created_at.strftime('%b %d, %Y') }}
+          </span>
+        </div>
+
+        <h1 class="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)] leading-tight mb-2">{{ listing.title }}</h1>
+        <p class="font-display font-extrabold text-xl text-[var(--color-accent)] mb-2">
+          {% if listing.has_discount %}
+            <span class="line-through text-[var(--text-secondary)] text-base mr-2">GHS {{ "{:,.2f}".format(listing.original_price) }}</span>
+            GHS {{ "{:,.2f}".format(listing.price) }}
+            <span class="text-[11px] ml-2 px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 font-bold align-middle">-{{ listing.discount_percent }}% OFF</span>
+          {% else %}
+            GHS {{ "{:,.2f}".format(listing.price) }}
+          {% endif %}
+        </p>
+        {% if listing.has_discount %}
+        <p class="text-[11px] text-green-400 font-mono mb-1">You save GHS {{ "{:,.2f}".format(listing.discount_saved) }}</p>
+        {% endif %}
+        {% if listing.quantity is not none and listing.quantity > 0 %}
+        <p class="text-[11px] text-[var(--text-secondary)] font-mono mb-6 flex items-center gap-1">
+          <i data-lucide="package" class="w-3.5 h-3.5"></i>
+          {% if listing.quantity <= 5 %}
+            <span class="text-amber-400 font-semibold">Only {{ listing.quantity }} left in stock</span>
+          {% else %}
+            {{ listing.quantity }} in stock
+          {% endif %}
+        </p>
+        {% elif listing.quantity is not none and listing.quantity <= 0 %}
+        <p class="text-[11px] text-red-400 font-mono mb-6 flex items-center gap-1">
+          <i data-lucide="package-x" class="w-3.5 h-3.5"></i> Out of stock
+        </p>
+        {% endif %}
+        
+        <div class="h-[1px] bg-[var(--color-border)] mb-6"></div>
+
+        <p class="font-sans text-xs text-[var(--text-secondary)] leading-relaxed mb-6 whitespace-pre-wrap">{{ listing.description }}</p>
+        
+        <!-- Delivery/Pickup policy badge -->
+        <div class="flex items-center gap-3 bg-[var(--bg-primary)] border border-[var(--color-border)] p-4 rounded-2xl mb-8 shadow-sm">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500">
+            <i data-lucide="truck" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <span class="block text-[8px] font-mono text-[var(--text-secondary)] uppercase">Pickup / Delivery Policy</span>
+            <span class="text-xs font-semibold text-[var(--text-primary)] mb-0.5 block">{{ listing.delivery_policy }}</span>
+            <span class="block text-[10px] text-[var(--text-secondary)] leading-tight">Buyers & sellers arrange logistics details privately after payment.</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <!-- Seller profile details -->
+        <div class="border-t border-[var(--color-border)] pt-6 mb-6">
+          <div class="flex items-center gap-3 mb-4">
+            <img src="{{ listing.seller.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}" alt="avatar" class="w-12 h-12 rounded-full object-cover">
+            <div>
+              <span class="block text-[8px] font-mono text-[var(--text-secondary)] uppercase">Handled By Campus Seller</span>
+              <p class="font-display font-semibold text-sm text-[var(--text-primary)]">
+                <a href="{{ url_for('auth.user_profile', user_id=listing.seller.id) }}" class="hover:underline hover:text-purple-400 transition">{{ listing.seller.full_name }}</a>
+              </p>
+              <div class="flex items-center gap-1 mt-0.5">
+                {% if listing.seller.average_rating %}
+                  <span class="text-yellow-500 font-mono text-[10px]">★ {{ "{:.1f}".format(listing.seller.average_rating) }}</span>
+                  <span class="text-[9px] text-[var(--text-secondary)]">({{ listing.seller.reviews_received | length or listing.seller.review_count }} reviews)</span>
+                {% else %}
+                  <span class="text-[9px] text-[var(--text-secondary)] italic">No reviews yet</span>
+                {% endif %}
+              </div>
+              <p class="font-sans text-[10px] text-[var(--text-secondary)] mt-1">Member of <span class="font-semibold text-purple-400">{{ listing.university }}</span></p>
+            </div>
+          </div>
+        </div>
+
+        {% if current_user.is_authenticated and current_user.id == listing.seller_id %}
+          <!-- Actions for Seller -->
+          <div class="bg-[var(--bg-primary)] border border-[var(--color-border)] p-4 rounded-2xl flex flex-col gap-3">
+            <div class="pb-2 border-b border-[var(--color-border)]">
+              <span class="text-[9px] uppercase font-mono tracking-wider text-[var(--text-secondary)] font-bold">Ambassador Safety Info</span>
+              <p class="text-[10px] text-[var(--text-secondary)] leading-tight mt-1">
+                Campus Plug takes a 10% fee on completed sales — you’ll receive <span class="font-mono font-bold text-[var(--color-success)]">GHS {{ "{:,.2f}".format(listing.fee_details.payout) }}</span> from this sale.
+              </p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3 mt-1">
+              <a href="{{ url_for('marketplace.edit_listing', listing_id=listing.id) }}" class="p-3 rounded-xl border border-[var(--color-border)] hover:bg-[var(--bg-tertiary)] text-center font-sans font-bold text-xs text-[var(--text-primary)] transition-all-smooth">
+                <i data-lucide="edit-3" class="inline w-3.5 h-3.5 mr-1"></i> Edit Item
+              </a>
+            {% if listing.status == 'active' and not listing.is_sold_out %}
+                <form action="{{ url_for('marketplace.mark_sold', listing_id=listing.id) }}" method="POST">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="w-full p-3 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs text-center hover:opacity-95 transition-all-smooth">
+                    <i data-lucide="check" class="inline w-3.5 h-3.5 mr-1"></i> Mark As Sold
+                  </button>
+                </form>
+              {% else %}
+                <div class="p-3 text-center rounded-xl bg-orange-500/10 text-orange-500 font-sans font-bold text-xs">
+                  Sold Out
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        {% else %}
+          <!-- Actions for Buyer/Bidder -->
+          <div class="flex flex-col gap-3">
+            {% if listing.status == 'active' %}
+              <div class="grid grid-cols-2 gap-3">
+                <!-- Check out -->
+                <a href="{{ url_for('payments.checkout', listing_id=listing.id) }}" class="p-4 rounded-xl bg-[var(--color-brand)] text-white text-center font-sans font-bold text-xs shadow-md btn-lift flex items-center justify-center gap-1.5">
+                  <i data-lucide="credit-card" class="w-4 h-4"></i> Secure Buy (GHS)
+                </a>
+                
+                <!-- Open Direct Chat messaging form overlay -->
+                <button onclick="document.getElementById('message-overlay').classList.remove('hidden')"
+                        class="p-4 rounded-xl border border-[var(--color-border)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] font-sans font-bold text-xs text-center hover:scale-[1.01] active:scale-95 transition-all-smooth flex items-center justify-center gap-1.5 bg-[var(--bg-secondary)]">
+                  <i data-lucide="message-circle" class="w-4 h-4 text-purple-500"></i> Message Seller
+                </button>
+              </div>
+            {% else %}
+              <div class="p-4 text-center rounded-2xl bg-orange-500/10 text-orange-500 font-sans font-bold text-sm">
+                This item has been Sold Out
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Related Listings row -->
+  <div class="mt-20 scroll-animate">
+    <div class="border-t border-[var(--color-border)] pt-12 mb-8 flex items-center justify-between">
+      <h2 class="font-display font-extrabold text-lg text-[var(--text-primary)]">You might also like</h2>
+      <a href="{{ url_for('marketplace.browse') }}" class="font-sans font-semibold text-xs text-purple-500 hover:underline flex items-center gap-1">Browse and filter all items <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></a>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      {% for item in related_items %}
+        <div class="listing-card bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl overflow-hidden card-hover-lift flex flex-col justify-between"
+             data-photos="{{ item.photos }}">
+          
+          <div class="relative aspect-video overflow-hidden">
+            <img src="{{ item.photo_list[0] }}" alt="related" class="listing-card-img w-full h-full object-cover">
+            <span class="absolute top-3 left-3 bg-[var(--bg-secondary)] text-[var(--text-primary)] text-[9px] font-mono font-bold px-2 py-1 rounded shadow border border-[var(--color-border)]">
+              {{ item.condition }}
+            </span>
+            <span class="absolute bottom-3 right-3 bg-purple-600 text-white text-[9px] font-semibold px-2 py-1 rounded-full shadow flex items-center gap-0.5">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> {{ item.university }}
+            </span>
+          </div>
+
+          <div class="p-5 flex flex-col justify-between flex-grow">
+            <div>
+              <a href="{{ url_for('marketplace.detail', listing_id=item.id) }}" class="font-sans font-bold text-xs block mb-1 text-[var(--text-primary)] hover:text-[var(--color-brand)] transition-colors line-clamp-1">
+                {{ item.title }}
+              </a>
+              <p class="text-[11px] text-[var(--text-secondary)] line-clamp-2 leading-relaxed mb-4">
+                {{ item.description }}
+              </p>
+            </div>
+
+            <div class="border-t border-[var(--color-border)] pt-3 flex items-center justify-between">
+              <span class="font-display font-extrabold text-xs text-[var(--color-accent)]">GHS {{ "{:,.2f}".format(item.price) }}</span>
+              <a href="{{ url_for('marketplace.detail', listing_id=item.id) }}" class="text-[10px] font-bold text-[var(--color-brand)] flex items-center gap-0.5">View Info <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></a>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <p class="text-xs text-[var(--text-secondary)] font-medium col-span-full">No other similar items are posted on Campus currently.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Message overlay mock modal modal dialog -->
+  <div id="message-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm hidden">
+    <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] p-8 max-w-sm w-full rounded-3xl shadow-2xl relative transform transition-all duration-300 scale-100 flex flex-col gap-4">
+      <button onclick="document.getElementById('message-overlay').classList.add('hidden')"
+              class="absolute right-4 top-4 p-2 rounded-full border border-[var(--color-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+
+      <div>
+        <h3 class="font-display font-extrabold text-md text-[var(--text-primary)]">Message {{ listing.seller.full_name }}</h3>
+        <p class="font-sans text-[11px] text-[var(--text-secondary)]">Discuss pickups, inspect condition, or coordinate local payments.</p>
+      </div>
+
+      <form action="{{ url_for('chat.send_message') }}" method="POST" class="flex flex-col gap-4 mt-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="recipient_id" value="{{ listing.seller_id }}">
+        <input type="hidden" name="context_type" value="listing">
+        <input type="hidden" name="context_id" value="{{ listing.id }}">
+        
+        <textarea name="body" rows="4" placeholder="Hello! I'm interested in your {{ listing.title }} posted from {{ listing.university }}..." required
+                  class="w-full text-xs p-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--bg-primary)] text-[var(--text-primary)] outline-none focus:border-[var(--color-brand)] focus:ring-1 focus:ring-[var(--color-brand)] resize-none"></textarea>
+        
+        <button type="submit" class="w-full py-3 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs btn-lift">
+          Send Message thread
+        </button>
+      </form>
+    </div>
+  </div>
+
+</section>
+{% endblock %}

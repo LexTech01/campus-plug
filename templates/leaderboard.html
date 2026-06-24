@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}Seller Leaderboard - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-4xl mx-auto px-4 py-6 relative z-10">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="font-display font-extrabold text-2xl tracking-tight text-[var(--text-primary)] flex items-center gap-2">
+        <i data-lucide="trophy" class="w-6 h-6 text-amber-400"></i>
+        Top Sellers
+      </h1>
+      <p class="font-sans text-xs text-[var(--text-secondary)] mt-1">Ranked by sales, volume, and ratings</p>
+    </div>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="flex flex-col gap-3">
+    {% for entry in leaderboard %}
+    <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl p-4 hover:border-[var(--color-brand)]/30 transition-all-smooth {% if entry.rank == 1 %}ring-2 ring-amber-400/30{% elif entry.rank == 2 %}ring-2 ring-gray-300/20{% elif entry.rank == 3 %}ring-2 ring-amber-600/20{% endif %}">
+      <div class="flex items-center gap-4">
+        <!-- Rank -->
+        <div class="flex-shrink-0 w-10 text-center">
+          {% if entry.rank == 1 %}
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center shadow-lg">
+            <i data-lucide="crown" class="w-5 h-5 text-white"></i>
+          </div>
+          {% elif entry.rank == 2 %}
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-300 to-gray-500 flex items-center justify-center shadow-md">
+            <span class="font-display font-extrabold text-sm text-white">2</span>
+          </div>
+          {% elif entry.rank == 3 %}
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-600 to-amber-800 flex items-center justify-center shadow-md">
+            <span class="font-display font-extrabold text-sm text-white">3</span>
+          </div>
+          {% else %}
+          <div class="w-10 h-10 rounded-xl bg-[var(--bg-primary)] border border-[var(--color-border)] flex items-center justify-center">
+            <span class="font-display font-extrabold text-sm text-[var(--text-secondary)]">{{ entry.rank }}</span>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Seller info -->
+        <a href="{{ url_for('auth.user_profile', user_id=entry.seller.id) }}" class="flex items-center gap-3 flex-1 min-w-0 group">
+          <img src="{{ entry.seller.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}"
+               alt="" class="w-10 h-10 rounded-full object-cover border border-[var(--color-border)] group-hover:ring-2 ring-[var(--color-brand)] transition-all">
+          <div class="min-w-0">
+            <p class="font-display font-bold text-sm text-[var(--text-primary)] truncate group-hover:text-[var(--color-brand)] transition">
+              {{ entry.seller.full_name }}
+              {% if entry.seller.is_verified %}
+              <i data-lucide="badge-check" class="w-3.5 h-3.5 text-[var(--color-accent)] fill-[var(--color-brand-glow)] inline"></i>
+              {% endif %}
+            </p>
+            <p class="font-sans text-[10px] text-[var(--text-secondary)] truncate">{{ entry.seller.university }}</p>
+          </div>
+        </a>
+
+        <!-- Stats -->
+        <div class="hidden sm:flex items-center gap-6 text-right">
+          <div>
+            <p class="font-display font-extrabold text-sm text-[var(--text-primary)]">{{ entry.completed_sales }}</p>
+            <p class="font-sans text-[9px] text-[var(--text-secondary)] uppercase tracking-wider">Sales</p>
+          </div>
+          <div>
+            <p class="font-display font-extrabold text-sm text-[var(--text-primary)]">GHS {{ "{:,.0f}".format(entry.total_volume) }}</p>
+            <p class="font-sans text-[9px] text-[var(--text-secondary)] uppercase tracking-wider">Volume</p>
+          </div>
+          <div>
+            <p class="font-display font-extrabold text-sm text-[var(--text-primary)] flex items-center gap-1 justify-end">
+              {% if entry.avg_rating %}
+              <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400 fill-amber-400"></i>
+              {{ entry.avg_rating }}
+              {% else %}
+              —
+              {% endif %}
+            </p>
+            <p class="font-sans text-[9px] text-[var(--text-secondary)] uppercase tracking-wider">Rating</p>
+          </div>
+          <div>
+            <p class="font-display font-extrabold text-sm text-[var(--text-primary)]">{{ entry.active_listings }}</p>
+            <p class="font-sans text-[9px] text-[var(--text-secondary)] uppercase tracking-wider">Listings</p>
+          </div>
+        </div>
+
+        <!-- Mobile stats row -->
+        <div class="flex sm:hidden items-center gap-3 text-right">
+          <div>
+            <p class="font-display font-bold text-xs text-[var(--text-primary)]">{{ entry.completed_sales }}</p>
+            <p class="font-sans text-[8px] text-[var(--text-secondary)] uppercase">Sales</p>
+          </div>
+          <div>
+            <p class="font-display font-bold text-xs text-[var(--text-primary)]">GHS {{ "{:,.0f}".format(entry.total_volume) }}</p>
+            <p class="font-sans text-[8px] text-[var(--text-secondary)] uppercase">Vol</p>
+          </div>
+        </div>
+
+        <!-- View profile (mobile) -->
+        <a href="{{ url_for('auth.user_profile', user_id=entry.seller.id) }}" class="sm:hidden p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--color-brand)] hover:bg-[var(--color-brand-glow)] transition-all-smooth">
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+    </div>
+    {% else %}
+    <div class="p-12 text-center border-2 border-dashed border-[var(--color-border)] rounded-2xl bg-[var(--bg-secondary)]">
+      <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 mx-auto mb-4">
+        <i data-lucide="trophy" class="w-6 h-6"></i>
+      </div>
+      <h3 class="font-display font-bold text-sm text-[var(--text-primary)]">No sellers yet</h3>
+      <p class="font-sans text-xs text-[var(--text-secondary)] mt-1">The leaderboard will populate as sellers make sales.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+</section>
+{% endblock %}

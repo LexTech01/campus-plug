@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Peer Rating & Review - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-md mx-auto px-6 py-12 relative z-10 font-sans">
+  
+  <div class="text-center mb-8">
+    <div class="w-16 h-16 bg-yellow-500/10 rounded-3xl flex items-center justify-center text-yellow-500 mx-auto mb-4 border border-yellow-500/20 shadow-sm animate-pulse">
+      <i data-lucide="star" class="w-8 h-8 fill-yellow-500/15"></i>
+    </div>
+    <h1 class="font-display font-extrabold text-2xl text-[var(--text-primary)] tracking-tight">Peer Rating Feedback</h1>
+    <p class="text-xs text-[var(--text-secondary)] mt-1 max-w-xs mx-auto">
+      Tell the campus community about your transaction with <strong class="text-[var(--text-primary)]">{{ reviewee.full_name }}</strong>.
+    </p>
+  </div>
+
+  <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl p-6 shadow-md">
+    <form action="{{ url_for('payments.submit_review', transaction_id=txn.id) }}" method="POST" class="flex flex-col gap-5 text-xs">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      
+      <!-- Stars Selection Block -->
+      <div>
+        <label class="block font-mono text-[9px] uppercase text-[var(--text-secondary)] mb-2.5 text-center">Score rating award</label>
+        
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <!-- Render 5 Radio Star Selection Option Inputs -->
+          {% for score in [5, 4, 3, 2, 1] %}
+            <label class="cursor-pointer group flex flex-col items-center">
+              <input type="radio" name="rating" value="{{ score }}" required {% if score == 5 %}checked{% endif %} class="sr-only peer">
+              <div class="w-10 h-10 rounded-xl border border-[var(--color-border)] bg-[var(--bg-primary)] hover:bg-[var(--bg-tertiary)] flex items-center justify-center text-[var(--text-secondary)] font-mono font-bold transition peer-checked:bg-yellow-500/15 peer-checked:text-yellow-500 peer-checked:border-yellow-500 text-sm">
+                {{ score }}★
+              </div>
+            </label>
+          {% endfor %}
+        </div>
+        <p class="text-[10px] text-center text-[var(--text-secondary)]">Select 1 star (poor) to 5 stars (exceptional quality).</p>
+      </div>
+
+      <!-- Comment Section Box -->
+      <div>
+        <label class="block font-mono text-[9px] uppercase text-[var(--text-secondary)] mb-1.5">Incident peer commentary</label>
+        <textarea name="comment" rows="4" placeholder="How was their response time? Packages or service completed as described? Be concise and helpful for Knust, UG, and UCC peers..." class="w-full p-3 rounded-xl border border-[var(--color-border)] bg-[var(--bg-primary)] font-sans text-xs focus:ring-1 focus:ring-purple-500 text-[var(--text-primary)] leading-normal" required></textarea>
+      </div>
+
+      <!-- Action Panel Buttons -->
+      <div class="flex flex-col gap-2 mt-2">
+        <button type="submit" class="w-full py-3 rounded-xl bg-[var(--color-brand)] hover:opacity-90 text-white font-bold text-xs shadow btn-lift flex items-center justify-center gap-1.5">
+          <i data-lucide="check" class="w-4 h-4"></i> Submit rating
+        </button>
+        <a href="{{ url_for('payments.dashboard') }}" class="w-full text-center py-3 border border-[var(--color-border)] hover:bg-[var(--bg-tertiary)] rounded-xl bg-[var(--bg-primary)] text-[var(--text-primary)] font-bold text-xs transition">
+          Dismiss
+        </a>
+      </div>
+
+    </form>
+  </div>
+
+  <div class="mt-8 text-center text-[10px] text-[var(--text-secondary)] bg-[var(--bg-secondary)] border border-[var(--color-border)] p-4 rounded-xl">
+    <span class="font-bold text-[var(--text-primary)]">Anti-Slop Guideline:</span> peer ratings cannot be deleted or altered once sent. They immediately contribute to global student average statistics on Ghana.
+  </div>
+
+</section>
+{% endblock %}

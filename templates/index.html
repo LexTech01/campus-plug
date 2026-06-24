@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+
+{% block title %}Campus Plug - Ghana's Gen-Z Student Marketplace & Gigs Platform{% endblock %}
+
+{% block content %}
+<!-- Immersive Hero Section -->
+<section class="relative min-h-[80vh] sm:min-h-[85vh] flex items-center justify-center px-4 sm:px-6 overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-tr from-purple-900/10 via-transparent to-amber-500/5 dark:from-purple-950/20 dark:to-amber-500/10 z-0"></div>
+  
+  <!-- Fancy grid background overlay -->
+  <div class="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:32px_32px] dark:bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] z-0"></div>
+
+  <!-- Floating University Badges -->
+  <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+    <div class="uni-badge" style="top:12%;left:5%;animation-delay:0s;animation-duration:22s;background:rgba(99,102,241,0.08);backdrop-filter:blur(6px);">KNUST</div>
+    <div class="uni-badge" style="top:25%;right:8%;animation-delay:2s;animation-duration:18s;background:rgba(168,85,247,0.06);backdrop-filter:blur(8px);">UG</div>
+    <div class="uni-badge" style="top:55%;left:3%;animation-delay:4s;animation-duration:25s;background:rgba(52,211,153,0.06);backdrop-filter:blur(6px);">UCC</div>
+    <div class="uni-badge" style="top:10%;left:40%;animation-delay:1s;animation-duration:20s;background:rgba(251,191,36,0.06);backdrop-filter:blur(8px);">ASHESI</div>
+    <div class="uni-badge" style="top:60%;right:12%;animation-delay:3s;animation-duration:24s;background:rgba(244,114,182,0.06);backdrop-filter:blur(6px);">UDS</div>
+    <div class="uni-badge" style="top:35%;left:60%;animation-delay:5s;animation-duration:19s;background:rgba(99,102,241,0.06);backdrop-filter:blur(8px);">UPSA</div>
+    <div class="uni-badge" style="top:70%;left:30%;animation-delay:2.5s;animation-duration:21s;background:rgba(249,115,22,0.06);backdrop-filter:blur(6px);">UEW</div>
+    <div class="uni-badge" style="top:5%;left:75%;animation-delay:4.5s;animation-duration:23s;background:rgba(34,211,238,0.06);backdrop-filter:blur(8px);">GIMPA</div>
+    <div class="uni-badge" style="top:75%;right:35%;animation-delay:1.5s;animation-duration:17s;background:rgba(168,85,247,0.06);backdrop-filter:blur(6px);">TTU</div>
+  </div>
+
+  <div class="max-w-5xl mx-auto text-center relative z-10 py-16 sm:py-12">
+    <!-- Campus Trust Tag -->
+    <div data-aos="fade-up" data-aos-delay="100" class="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] shadow-md mb-6 sm:mb-8 hover:scale-105 transition-all-smooth cursor-default">
+      <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[var(--color-accent)] animate-pulse"></span>
+      <span class="font-mono text-[8px] sm:text-[10px] uppercase font-bold tracking-wider text-[var(--text-secondary)]">Live Across 10 Ghanaian Universities</span>
+    </div>
+
+    <!-- Main Bold Headline -->
+    <h1 data-aos="fade-up" data-aos-delay="200" class="font-display font-extrabold text-[1.75rem] sm:text-5xl md:text-6xl tracking-tight leading-[1.15] mb-4 sm:mb-6 text-[var(--text-primary)] px-2 sm:px-0">
+      The Ultimate Campus Hub for <br class="hidden sm:inline">
+      <span class="bg-gradient-to-r from-purple-500 via-pink-500 to-amber-500 bg-clip-text text-transparent">Buying, Selling, & Hustling</span>
+    </h1>
+
+    <p data-aos="fade-up" data-aos-delay="300" class="max-w-2xl mx-auto font-sans text-sm sm:text-lg text-[var(--text-secondary)] leading-relaxed mb-10 sm:mb-14 px-2 sm:px-0">
+      Trade textbooks, electronics, fashion, and more peer-to-peer, or find flexible gigs like tutoring and delivery. Built for students and businesses in Ghana with secure MoMo escrow.
+    </p>
+
+    <!-- CTAs with tactile lift -->
+    <div data-aos="fade-up" data-aos-delay="400" class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+      <a href="{{ url_for('marketplace.browse') }}" class="w-fit px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs sm:text-sm shadow-xl btn-lift flex items-center justify-center gap-2">
+        <i data-lucide="tag" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i> Explore Marketplace
+      </a>
+      <a href="{{ url_for('freelance.browse') }}" class="w-fit px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-[var(--bg-secondary)] text-[var(--text-primary)] font-sans font-bold text-xs sm:text-sm border border-[var(--color-border)] shadow-lg hover:bg-[var(--bg-tertiary)] hover:scale-105 transition-all-smooth flex items-center justify-center gap-2">
+        <i data-lucide="briefcase" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i> Browse Gigs & Bids
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Dual Platform: How it works side-by-side -->
+<section id="how-it-works" class="max-w-7xl mx-auto px-6 py-24 border-t border-[var(--color-border)] relative">
+  <div data-aos="fade-up" class="text-center mb-16">
+    <h2 class="font-display font-extrabold text-3xl mb-4 text-[var(--text-primary)]">Two Markets. One Shared Connection.</h2>
+    <p class="max-w-xl mx-auto font-sans text-sm text-[var(--text-secondary)]">Campus Plug operates as a combined marketplace. Trade items or hire your colleagues — any student, of any campus, can interact safely.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10">
+    
+    <!-- P2P Side -->
+    <div data-aos="fade-right" class="bg-[var(--bg-secondary)] border border-[var(--color-border)] p-8 sm:p-10 rounded-3xl shadow-xl card-hover-lift flex flex-col justify-between">
+      <div>
+        <div class="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-500 mb-6 border border-purple-500/20">
+          <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+        </div>
+        <h3 class="font-display font-extrabold text-xl mb-4 text-[var(--text-primary)]">Student-to-Student Marketplace</h3>
+        <p class="font-sans text-sm text-[var(--text-secondary)] leading-relaxed mb-6">
+          Need a mattress, desk organizer, textbook, or electronics accessories? Buyers browse and message campus vendors directly to map local pickups. Sellers create a listing under GHS prices, autotagged block-by-block with their specific universities.
+        </p>
+        <ul class="space-y-3 font-sans text-xs text-[var(--text-secondary)] mb-8">
+          <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i> Clear condition badges & local photos</li>
+          <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i> Delivery policies clearly stated on creation</li>
+          <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i> Safe meeting spot reminders before handshakes</li>
+        </ul>
+      </div>
+      <a href="{{ url_for('marketplace.browse') }}" class="font-sans font-bold text-xs text-[var(--color-brand)] flex items-center gap-1 group">
+        Start shopping <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+      </a>
+    </div>
+
+    <!-- Gigs Side -->
+    <div data-aos="fade-left" class="bg-[var(--bg-secondary)] border border-[var(--color-border)] p-8 sm:p-10 rounded-3xl shadow-xl card-hover-lift flex flex-col justify-between">
+      <div>
+        <div class="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 mb-6 border border-amber-500/20">
+          <i data-lucide="code" class="w-6 h-6"></i>
+        </div>
+        <h3 class="font-display font-extrabold text-xl mb-4 text-[var(--text-primary)]">Freelance Gig Exchange</h3>
+        <p class="font-sans text-sm text-[var(--text-secondary)] leading-relaxed mb-6">
+          Turn your academic, design, coding, photo, or physical skills into Mobile Money payouts. Post tasks with deadlines and receive competitive bids from skilled freelancers.
+        </p>
+        <ul class="space-y-3 font-sans text-xs text-[var(--text-secondary)] mb-8">
+          <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i> Bids are completely customizable by freelancers</li>
+          <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i> Remote-friendly or strictly location filters</li>
+          <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i> Client releases funds only when result checks out</li>
+        </ul>
+      </div>
+      <a href="{{ url_for('freelance.browse') }}" class="font-sans font-bold text-xs text-[var(--color-brand)] flex items-center gap-1 group">
+        Find freelance jobs <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+      </a>
+    </div>
+
+  </div>
+</section>
+
+<!-- Trending/Featured Listings (Marketplace) -->
+<section class="border-t border-[var(--color-border)] py-24 bg-[rgba(255,255,255,0.01)] dark:bg-[rgba(19,26,38,0.3)]">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-12 scroll-animate gap-4">
+      <div>
+        <h2 class="font-display font-extrabold text-2xl mb-2 text-[var(--text-primary)]">Trending Student Listings</h2>
+        <p class="font-sans text-xs text-[var(--text-secondary)]">Recently added items on campuses across the country.</p>
+      </div>
+      <a href="{{ url_for('marketplace.browse') }}" class="font-sans font-bold text-xs text-white bg-[var(--color-brand)] px-5 py-2.5 rounded-xl btn-lift flex items-center gap-2">
+        See All Listings <i data-lucide="chevron-right" class="w-4 h-4"></i>
+      </a>
+    </div>
+
+    <!-- Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+      {% for listing in listings %}
+        <div data-aos="fade-up" data-aos-delay="{{ loop.index0 * 100 }}" class="listing-card bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl overflow-hidden card-hover-lift flex flex-col justify-between"
+             data-photos="{{ listing.photos }}">
+          
+          <div class="relative aspect-video overflow-hidden">
+            <img src="{{ listing.photo_list[0] }}" alt="item-photo" class="listing-card-img w-full h-full object-cover transition-transform duration-500 hover:scale-105">
+            <!-- Condition Tag -->
+            <span class="absolute top-3 left-3 bg-[var(--bg-secondary)] text-[var(--text-primary)] text-[10px] font-mono font-bold px-2 py-1 rounded-md shadow-md border border-[var(--color-border)]">
+              {{ listing.condition }}
+            </span>
+            {% if listing.has_discount %}
+            <span class="absolute top-3 right-3 bg-green-500/90 text-white text-[10px] font-mono font-bold px-2 py-1 rounded-md shadow-md">
+              -{{ listing.discount_percent }}%
+            </span>
+            {% endif %}
+            <!-- Campus Badge -->
+            <span class="absolute bottom-3 right-3 bg-purple-600 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+              <i data-lucide="map-pin" class="w-3 h-3"></i> {{ listing.university }}
+            </span>
+          </div>
+
+          <div class="p-5 flex-grow flex flex-col justify-between">
+            <div>
+              <span class="text-[10px] uppercase font-mono tracking-widest text-purple-400 font-bold block mb-1">{{ listing.category }}</span>
+              <a href="{{ url_for('marketplace.detail', listing_id=listing.id) }}" class="font-sans font-bold text-sm block mb-1 text-[var(--text-primary)] hover:text-[var(--color-brand)] transition-colors line-clamp-1">
+                {{ listing.title }}
+              </a>
+              <p class="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed mb-4">
+                {{ listing.description }}
+              </p>
+            </div>
+
+            <div class="border-t border-[var(--color-border)] pt-4 flex items-center justify-between">
+              <div>
+                <span class="text-[9px] font-mono block text-[var(--text-secondary)] uppercase">Price</span>
+                <span class="font-display font-extrabold text-sm text-[var(--color-accent)]">
+                  {% if listing.has_discount %}
+                    <span class="line-through text-[var(--text-secondary)] mr-1">GHS {{ "{:,.2f}".format(listing.original_price) }}</span>
+                    GHS {{ "{:,.2f}".format(listing.price) }}
+                    <span class="text-[9px] ml-1 px-1 py-0.5 rounded bg-green-500/20 text-green-400 font-bold">-{{ listing.discount_percent }}%</span>
+                  {% else %}
+                    GHS {{ "{:,.2f}".format(listing.price) }}
+                  {% endif %}
+                </span>
+              </div>
+              <a href="{{ url_for('marketplace.detail', listing_id=listing.id) }}" class="p-2 rounded-lg bg-[var(--bg-tertiary)] hover:bg-[var(--color-brand)] hover:text-white text-[var(--text-primary)] transition-all-smooth">
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </a>
+            </div>
+          </div>
+
+        </div>
+      {% else %}
+        <!-- Empty state -->
+        <div class="col-span-full py-16 bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl text-center">
+          <i data-lucide="package" class="w-12 h-12 text-[var(--text-secondary)] mx-auto mb-4"></i>
+          <p class="font-sans text-sm text-[var(--text-secondary)] font-medium">No marketplace items posted yet.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Featured Gigs (Freelance Board) -->
+<section class="py-24 border-t border-[var(--color-border)]">
+  <div class="max-w-7xl mx-auto px-6">
+    <div data-aos="fade-up" class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-12 gap-4">
+      <div>
+        <h2 class="font-display font-extrabold text-2xl mb-2 text-[var(--text-primary)]">Open Campus Gigs</h2>
+        <p class="font-sans text-xs text-[var(--text-secondary)]">Earn GHS doing flexible tasks, writing reports, or tutoring business subjects.</p>
+      </div>
+      <a href="{{ url_for('freelance.browse') }}" class="font-sans font-bold text-xs text-[var(--text-primary)] bg-[var(--bg-secondary)] border border-[var(--color-border)] px-5 py-2.5 rounded-xl hover:bg-[var(--bg-tertiary)] transition-all-smooth flex items-center gap-2 shadow-sm">
+        View Bid Board <i data-lucide="external-link" class="w-4 h-4"></i>
+      </a>
+    </div>
+
+    <!-- Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
+      {% for gig in gigs %}
+        <div data-aos="fade-up" data-aos-delay="{{ loop.index0 * 150 }}" class="bg-[var(--bg-secondary)] border border-[var(--color-border)] p-6 rounded-2xl shadow-md card-hover-lift flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <!-- Category Badge -->
+              <span class="text-[10px] font-mono uppercase bg-amber-500/10 text-amber-500 px-2 py-1 rounded font-bold">
+                {{ gig.category }}
+              </span>
+              <!-- Remote friendly indicator -->
+              <span class="text-[10px] font-sans font-semibold {% if gig.remote_friendly %} text-green-500 {% else %} text-blue-400 {% endif %}">
+                {% if gig.remote_friendly %}
+                  <i data-lucide="globe" class="inline w-3 h-3 mr-0.5"></i> Remote Friendly
+                {% else %}
+                  <i data-lucide="map-pin" class="inline w-3.5 h-3.5 mr-0.5"></i> On Campus
+                {% endif %}
+              </span>
+            </div>
+
+            <a href="{{ url_for('freelance.detail', gig_id=gig.id) }}" class="font-display font-bold text-md block mb-2 text-[var(--text-primary)] hover:text-[var(--color-brand)] transition-colors line-clamp-1">
+              {{ gig.title }}
+            </a>
+            <p class="font-sans text-xs text-[var(--text-secondary)] leading-relaxed mb-6 line-clamp-3">
+              {{ gig.description }}
+            </p>
+          </div>
+
+          <div class="border-t border-[var(--color-border)] pt-4 flex items-center justify-between">
+            <div>
+              <span class="text-[9px] font-mono block text-[var(--text-secondary)] uppercase">Budget</span>
+              <span class="font-display font-extrabold text-sm text-[var(--color-success)]">GHS {{ "{:,.2f}".format(gig.budget) }}</span>
+            </div>
+            
+            <div class="flex items-center gap-3">
+              <!-- Client Campus tag -->
+              <div class="text-right">
+                <span class="block text-[8px] font-mono text-[var(--text-secondary)] uppercase">Posted from</span>
+                <span class="text-[10px] font-semibold text-[var(--text-primary)]">{{ gig.university }}</span>
+              </div>
+              <a href="{{ url_for('freelance.detail', gig_id=gig.id) }}" class="p-2 rounded-xl bg-[var(--bg-tertiary)] hover:bg-[var(--color-brand)] hover:text-white text-[var(--text-primary)] transition-all-smooth">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="col-span-full py-16 bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl text-center">
+          <i data-lucide="briefcase" class="w-12 h-12 text-[var(--text-secondary)] mx-auto mb-4"></i>
+          <p class="font-sans text-sm text-[var(--text-secondary)] font-medium">No freelance gigs open currently.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Fee Transparency: Pricing guarantee -->
+<section class="max-w-7xl mx-auto px-6 py-24 border-t border-[var(--color-border)]">
+  <div data-aos="zoom-in" class="bg-gradient-to-br from-purple-900/10 via-transparent to-amber-500/5 dark:from-purple-950/20 dark:to-transparent border border-[var(--color-border)] rounded-3xl p-8 sm:p-12 shadow-xl relative overflow-hidden">
+    <!-- Starburst decoration -->
+    <div class="absolute right-0 top-0 w-64 h-64 bg-gradient-to-b from-purple-500/5 to-transparent rounded-full filter blur-xl pointer-events-none"></div>
+
+    <div class="flex flex-col md:flex-row items-center justify-between gap-10 relative z-10">
+      <div data-aos="fade-right" class="max-w-md">
+        <span class="font-mono text-[10px] font-extrabold uppercase text-[var(--color-accent)] tracking-wider">Zero Setup Fee</span>
+        <h2 class="font-display font-extrabold text-3xl mb-4 mt-2 text-[var(--text-primary)]">Free To Join. We Only Earn When You Do.</h2>
+        <p class="font-sans text-sm text-[var(--text-secondary)] leading-relaxed mb-6">
+          Setting up an account and building listings or bidding is 100% free of charge. No subscriptions, no upfront fees, no premium unlock walls. 
+        </p>
+        <div class="flex items-center gap-2 bg-[var(--bg-secondary)] border border-[var(--color-border)] py-2.5 px-4 rounded-xl w-fit shadow-sm">
+          <i data-lucide="shield-check" class="w-5 h-5 text-purple-500"></i>
+          <span class="font-sans font-semibold text-xs text-[var(--text-primary)]">Campus Plug collects a flat 10% fee on completed sales</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full md:max-w-lg">
+        <div data-aos="fade-left" data-aos-delay="100" class="bg-[var(--bg-secondary)] border border-[var(--color-border)] p-6 rounded-2xl shadow-md">
+          <span class="font-display font-extrabold text-2xl text-[var(--color-accent)]">10%</span>
+          <h4 class="font-sans font-bold text-xs mt-2 mb-1 text-[var(--text-primary)]">P2P Escrow Cut</h4>
+          <p class="font-sans text-[11px] text-[var(--text-secondary)]">Locked in MoMo escrow on payment, and released once the buyer and seller verify the delivery handover.</p>
+        </div>
+
+        <div data-aos="fade-left" data-aos-delay="200" class="bg-[var(--bg-secondary)] border border-[var(--color-border)] p-6 rounded-2xl shadow-md">
+          <span class="font-display font-extrabold text-2xl text-purple-500">GHS 0.00</span>
+          <h4 class="font-sans font-bold text-xs mt-2 mb-1 text-[var(--text-primary)]">Bid/Listing Fee</h4>
+          <p class="font-sans text-[11px] text-[var(--text-secondary)]">Create as many product listings or bid proposals as you wish. We do not restrict student opportunity.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

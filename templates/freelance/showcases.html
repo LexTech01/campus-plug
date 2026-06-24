@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+
+{% block title %}Freelancer Showcases - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-xl mx-auto px-4 md:px-6 py-6 relative z-10">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="font-display font-extrabold text-xl tracking-tight text-[var(--text-primary)]">Showcases</h1>
+      <p class="font-sans text-xs text-[var(--text-secondary)] mt-0.5">Creative work from campus sellers</p>
+    </div>
+    {% if current_user.is_authenticated and current_user.account_type in ('seller', 'admin') %}
+    <a href="{{ url_for('freelance.create_showcase') }}" class="px-4 py-2 rounded-xl bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white font-sans font-semibold text-xs shadow-md btn-lift flex items-center gap-1.5">
+      <i data-lucide="plus" class="w-3.5 h-3.5"></i> New Post
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Feed -->
+  <div class="flex flex-col gap-4">
+    {% for post in showcases %}
+    <article id="showcase-{{ post.id }}" class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl shadow-sm overflow-hidden">
+
+      <!-- Header -->
+        <div class="px-4 md:px-6 pt-4 pb-2 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <a href="{{ url_for('auth.user_profile', user_id=post.freelancer.id) }}">
+            <img src="{{ post.freelancer.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}"
+                 alt="{{ post.freelancer.full_name }}"
+                 class="w-9 h-9 rounded-full object-cover border border-[var(--color-border)] hover:opacity-90 transition">
+          </a>
+          <div>
+            <p class="font-display font-bold text-xs text-[var(--text-primary)] flex items-center gap-1">
+              <a href="{{ url_for('auth.user_profile', user_id=post.freelancer.id) }}" class="hover:underline">{{ post.freelancer.full_name }}</a>
+              {% if post.freelancer.is_verified %}
+              <span title="Verified"><i data-lucide="badge-check" class="w-3.5 h-3.5 text-[var(--color-accent)] fill-[var(--color-brand-glow)]"></i></span>
+              {% endif %}
+            </p>
+            <p class="font-sans text-[10px] text-[var(--text-secondary)]">{{ post.created_at.strftime('%d %b %Y at %H:%M') }}</p>
+          </div>
+        </div>
+        <div class="relative">
+          {% if current_user.is_authenticated and (current_user.id == post.user_id or current_user.is_admin) %}
+          <form action="{{ url_for('freelance.delete_showcase', post_id=post.id) }}" method="POST" onsubmit="return confirm('Delete this post?');" class="m-0">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--color-error)] hover:bg-red-500/10 transition-all-smooth" title="Delete">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Body + Media (clickable) -->
+      <a href="{{ url_for('freelance.showcase_detail', post_id=post.id) }}" class="block">
+      <div class="px-4 md:px-6 py-1">
+        <h2 class="font-display font-extrabold text-sm text-[var(--text-primary)] leading-snug mb-1">{{ post.title }}</h2>
+        <p class="font-sans text-xs text-[var(--text-secondary)] leading-relaxed whitespace-pre-line">{{ post.content }}</p>
+      </div>
+
+      {% if post.media_list %}
+      {% set m = post.media_list %}
+      <div class="mt-2 border-t border-b border-[var(--color-border)] bg-[var(--bg-primary)]">
+        {% if m|length == 1 %}
+        <div class="max-h-96 overflow-hidden">
+          <img src="{{ m[0] }}" alt="" class="w-full h-full object-cover">
+        </div>
+        {% elif m|length == 2 %}
+        <div class="grid grid-cols-2 gap-0">
+          {% for url in m %}
+          <div class="max-h-72 overflow-hidden">
+            <img src="{{ url }}" alt="" class="w-full h-full object-cover">
+          </div>
+          {% endfor %}
+        </div>
+        {% elif m|length == 3 %}
+        <div class="grid grid-cols-2 gap-0">
+          <div class="row-span-2 max-h-96 overflow-hidden bg-[var(--bg-primary)]">
+            <img src="{{ m[0] }}" alt="" class="w-full h-full object-cover">
+          </div>
+          <div class="max-h-48 overflow-hidden border-l border-[var(--color-border)] bg-[var(--bg-primary)]">
+            <img src="{{ m[1] }}" alt="" class="w-full h-full object-cover">
+          </div>
+          <div class="max-h-48 overflow-hidden border-l border-t border-[var(--color-border)] bg-[var(--bg-primary)]">
+            <img src="{{ m[2] }}" alt="" class="w-full h-full object-cover">
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+      </a>
+
+      <!-- Stats bar -->
+      <div class="px-4 md:px-6 py-2 flex items-center justify-between text-[10px] font-sans text-[var(--text-secondary)] border-b border-[var(--color-border)]">
+        <span class="like-count-{{ post.id }}">{% if post.likes|length > 0 %}{{ post.likes|length }} like{% if post.likes|length != 1 %}s{% endif %}{% endif %}</span>
+        <span class="comment-count-{{ post.id }}">{% if post.comments|length > 0 %}{{ post.comments|length }} comment{% if post.comments|length != 1 %}s{% endif %}{% endif %}</span>
+      </div>
+
+      <!-- Action buttons -->
+      {% set liked = post.id in liked_post_ids %}
+      <div class="px-2 py-1 flex items-center border-b border-[var(--color-border)]">
+        <!-- Like (AJAX) -->
+        <div class="flex-1">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="button" data-post-id="{{ post.id }}" data-liked="{{ 'true' if liked else 'false' }}"
+                  class="like-btn w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all-smooth
+            {% if liked %} text-[var(--color-brand)] {% else %} text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] {% endif %}">
+            <svg class="w-3.5 h-3.5 like-icon" fill="{% if liked %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <path d="M7 10v12"/>
+              <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/>
+            </svg>
+            <span class="like-text">{% if liked %}Liked{% else %}Like{% endif %}</span>
+          </button>
+        </div>
+        <!-- Comment -->
+        <button type="button" onclick="focusComment('comment-input-{{ post.id }}')" class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-all-smooth">
+          <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> Comment
+        </button>
+        <!-- Share -->
+        <button type="button" onclick="copyShareLink('{{ url_for('freelance.showcases_list', _external=True) }}')" class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-all-smooth">
+          <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
+        </button>
+      </div>
+
+      <!-- Comments -->
+      <div class="px-4 md:px-6 py-3 bg-[var(--bg-primary)]">
+        <div class="flex flex-col gap-2 mb-3 comments-container-{{ post.id }}">
+          {% if post.comments %}
+          {% for comment in post.comments[:3] %}
+          <div class="flex items-start gap-2 comment-{{ comment.id }}">
+            <img src="{{ comment.user.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}"
+                 alt="" class="w-6 h-6 rounded-full object-cover flex-shrink-0">
+            <div class="flex-1 bg-[var(--bg-secondary)] rounded-xl px-3 py-1.5 border border-[var(--color-border)]/50">
+              <p class="font-display font-bold text-[10px] text-[var(--text-primary)]">
+                <a href="{{ url_for('auth.user_profile', user_id=comment.user_id) }}" class="hover:underline">{{ comment.user.full_name }}</a>
+              </p>
+              <p class="font-sans text-[11px] text-[var(--text-primary)] leading-relaxed">{{ comment.content }}</p>
+            </div>
+          </div>
+          {% endfor %}
+          {% if post.comments|length > 3 %}
+          <button type="button" onclick="this.nextElementSibling.classList.remove('hidden');this.remove()" class="text-left text-[10px] text-[var(--color-brand)] hover:underline font-semibold ml-8">View all {{ post.comments|length }} comments</button>
+          <div class="hidden">
+            {% for comment in post.comments[3:] %}
+            <div class="flex items-start gap-2 mt-2">
+              <img src="{{ comment.user.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}"
+                   alt="" class="w-6 h-6 rounded-full object-cover flex-shrink-0">
+              <div class="flex-1 bg-[var(--bg-secondary)] rounded-xl px-3 py-1.5 border border-[var(--color-border)]/50">
+                <p class="font-display font-bold text-[10px] text-[var(--text-primary)]">
+                  <a href="{{ url_for('auth.user_profile', user_id=comment.user_id) }}" class="hover:underline">{{ comment.user.full_name }}</a>
+                </p>
+                <p class="font-sans text-[11px] text-[var(--text-primary)] leading-relaxed">{{ comment.content }}</p>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% endif %}
+        </div>
+
+        {% if current_user.is_authenticated %}
+        <form class="m-0 flex items-center gap-2 comment-form" data-post-id="{{ post.id }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <img src="{{ current_user.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}"
+               alt="" class="w-7 h-7 rounded-full object-cover flex-shrink-0">
+          <input type="text" name="content" required placeholder="Write a comment..."
+                 class="flex-1 text-xs px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--bg-secondary)] focus:border-[var(--color-brand)] focus:outline-none transition-all-smooth placeholder:text-[var(--text-secondary)]">
+          <button type="submit" class="p-2 rounded-lg bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white transition-all-smooth flex-shrink-0">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+          </button>
+        </form>
+        {% else %}
+        <p class="text-center text-[10px] text-[var(--text-secondary)] py-1">
+          <a href="{{ url_for('auth.login') }}" class="text-[var(--color-brand)] hover:underline font-semibold">Log in</a> to like or comment.
+        </p>
+        {% endif %}
+      </div>
+
+    </article>
+    {% else %}
+    <div class="p-12 text-center border-2 border-dashed border-[var(--color-border)] rounded-2xl bg-[var(--bg-secondary)]">
+      <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 mx-auto mb-3">
+        <i data-lucide="palette" class="w-5 h-5"></i>
+      </div>
+      <h3 class="font-display font-bold text-sm text-[var(--text-primary)]">No showcases yet</h3>
+      <p class="font-sans text-xs text-[var(--text-secondary)] mt-1 max-w-sm mx-auto">Be the first to showcase your work!</p>
+      {% if current_user.is_authenticated and current_user.account_type in ('seller', 'admin') %}
+      <a href="{{ url_for('freelance.create_showcase') }}" class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-[var(--color-brand)] text-white text-xs font-semibold rounded-xl hover:bg-[var(--color-brand-hover)] shadow transition">
+        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Post Showcase
+      </a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if pagination.pages > 1 %}
+  <div class="flex items-center justify-between pt-6 mt-6 border-t border-[var(--color-border)] font-mono text-[10px] text-[var(--text-secondary)]">
+    <span>Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    <div class="flex gap-2">
+      {% if pagination.has_prev %}
+      <a href="{{ url_for('freelance.showcases_list', page=pagination.prev_num) }}" class="px-3 py-1.5 border border-[var(--color-border)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-lg font-bold transition">Previous</a>
+      {% endif %}
+      {% if pagination.has_next %}
+      <a href="{{ url_for('freelance.showcases_list', page=pagination.next_num) }}" class="px-3 py-1.5 border border-[var(--color-border)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-lg font-bold transition">Next</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+</section>
+
+<script>
+function focusComment(id) {
+  var el = document.getElementById(id);
+  if (el) { el.focus(); }
+}
+function copyShareLink() {
+  if (navigator.share) {
+    navigator.share({ title: 'Campus Plug Showcase', url: window.location.href });
+  } else {
+    navigator.clipboard.writeText(window.location.href);
+    var btn = event.currentTarget;
+    var orig = btn.innerHTML;
+    btn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> Copied';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    setTimeout(function() { btn.innerHTML = orig; if (typeof lucide !== 'undefined') lucide.createIcons(); }, 2000);
+  }
+}
+
+function getCsrfToken() {
+  var m = document.querySelector('input[name="csrf_token"]');
+  return m ? m.value : '';
+}
+
+document.querySelectorAll('.like-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var postId = this.dataset.postId;
+    var csrf = getCsrfToken();
+    var liked = this.dataset.liked === 'true';
+
+    fetch('/freelance/showcases/' + postId + '/like', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrf,
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: 'csrf_token=' + encodeURIComponent(csrf)
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.success) {
+        btn.dataset.liked = data.liked ? 'true' : 'false';
+        btn.classList.remove('text-[var(--color-brand)]', 'text-[var(--text-secondary)]');
+        btn.classList.add(data.liked ? 'text-[var(--color-brand)]' : 'text-[var(--text-secondary)]');
+        var icon = btn.querySelector('.like-icon');
+        if (icon) icon.setAttribute('fill', data.liked ? 'currentColor' : 'none');
+        var txt = btn.querySelector('.like-text');
+        if (txt) txt.textContent = data.liked ? 'Liked' : 'Like';
+        var stat = document.querySelector('.like-count-' + postId);
+        if (stat) {
+          stat.textContent = data.count > 0 ? data.count + ' like' + (data.count !== 1 ? 's' : '') : '';
+        }
+      }
+    });
+  });
+});
+
+document.querySelectorAll('.comment-form').forEach(function(form) {
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var postId = this.dataset.postId;
+    var input = this.querySelector('input[name="content"]');
+    var content = input.value.trim();
+    if (!content) return;
+    var csrf = getCsrfToken();
+
+    fetch('/freelance/showcases/' + postId + '/comment', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrf,
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: 'csrf_token=' + encodeURIComponent(csrf) + '&content=' + encodeURIComponent(content)
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.success) {
+        input.value = '';
+        var container = document.querySelector('.comments-container-' + postId);
+        var div = document.createElement('div');
+        div.className = 'flex items-start gap-2';
+        div.innerHTML =
+          '<img src="' + data.comment.user_avatar + '" alt="" class="w-6 h-6 rounded-full object-cover flex-shrink-0">' +
+          '<div class="flex-1 bg-[var(--bg-secondary)] rounded-xl px-3 py-1.5 border border-[var(--color-border)]/50">' +
+          '<p class="font-display font-bold text-[10px] text-[var(--text-primary)]">' +
+          '<a href="/auth/user/' + data.comment.user_id + '" class="hover:underline">' + escapeHtml(data.comment.user_name) + '</a></p>' +
+          '<p class="font-sans text-[11px] text-[var(--text-primary)] leading-relaxed">' + escapeHtml(data.comment.content) + '</p></div>';
+        container.appendChild(div);
+        var stat = document.querySelector('.comment-count-' + postId);
+        if (stat) {
+          stat.textContent = data.count > 0 ? data.count + ' comment' + (data.count !== 1 ? 's' : '') : '';
+        }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      }
+    });
+  });
+});
+
+function escapeHtml(text) {
+  var d = document.createElement('div');
+  d.appendChild(document.createTextNode(text));
+  return d.innerHTML;
+}
+</script>
+{% endblock %}

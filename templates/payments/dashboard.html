@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Finances & Escrow Dashboard - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto px-6 py-6 relative z-10 animate-fade-in">
+  
+  <div data-aos="fade-up" class="mb-12 border-b border-[var(--color-border)] pb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h1 class="font-display font-extrabold text-2xl tracking-tight text-[var(--text-primary)]">Student Finances & Escrow Ledger</h1>
+      <p class="font-sans text-xs text-[var(--text-secondary)] mt-1">Check pending escrow holdings, release completed payouts, and coordinate secure GHS Mobile Money payments.</p>
+    </div>
+    
+    <!-- User Momo Settings banner -->
+    <div class="p-3 bg-purple-500/5 rounded-2xl border border-purple-500/10 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center font-bold">
+        <i data-lucide="wallet" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <p class="text-[10px] font-sans font-bold text-[var(--text-primary)]">Your Payout MoMo Account</p>
+        <p class="text-[9px] font-mono text-purple-400">
+          {% if current_user.phone and current_user.momo_provider %}
+            {{ current_user.momo_provider }}: {{ current_user.phone }}
+          {% else %}
+            No account set (Configure during checkout)
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard Overview Balances cards -->
+  <div data-aos="fade-up" data-aos-delay="100" class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
+    <!-- Active Escrow holdings -->
+    <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] p-6 rounded-2xl shadow transition-transform hover:scale-[1.02] duration-300">
+      <div class="flex items-center justify-between mb-4">
+        <span class="text-[10px] uppercase font-mono tracking-wider text-[var(--text-secondary)]">Locked Escrow holds</span>
+        <i data-lucide="lock" class="w-4 h-4 text-purple-500"></i>
+      </div>
+      <p class="font-display font-extrabold text-xl text-[var(--text-primary)] font-mono">GHS {{ "{:,.2f}".format(payout_metrics.locked_escrow) }}</p>
+      <span class="block text-[9px] text-[var(--text-secondary)] mt-2 font-sans">Frozen securely until buyer releases or mediator acts.</span>
+    </div>
+
+    <!-- Released Successful payouts -->
+    <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] p-6 rounded-2xl shadow transition-transform hover:scale-[1.02] duration-300">
+      <div class="flex items-center justify-between mb-4">
+        <span class="text-[10px] uppercase font-mono tracking-wider text-[var(--text-secondary)]">Released Cash (90%)</span>
+        <i data-lucide="check-check" class="w-4 h-4 text-[var(--color-success)] animate-pulse"></i>
+      </div>
+      <p class="font-display font-extrabold text-xl text-[var(--color-success)] font-mono">GHS {{ "{:,.2f}".format(payout_metrics.total_released) }}</p>
+      <span class="block text-[9px] text-[var(--text-secondary)] mt-2 font-sans">Completed sales credits already wired to your MoMo account.</span>
+    </div>
+
+    <!-- Disputed settlements -->
+    <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] p-6 rounded-2xl shadow transition-transform hover:scale-[1.02] duration-300">
+      <div class="flex items-center justify-between mb-4">
+        <span class="text-[10px] uppercase font-mono tracking-wider text-[var(--text-secondary)]">Disputed settlements</span>
+        <i data-lucide="alert-circle" class="w-4 h-4 text-orange-500"></i>
+      </div>
+      <p class="font-display font-extrabold text-xl text-orange-400 font-mono">GHS {{ "{:,.2f}".format(payout_metrics.total_disputed) }}</p>
+      <span class="block text-[9px] text-[var(--text-secondary)] mt-2 font-sans">Escrow settlements processing under active mediator review.</span>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 md:gap-12">
+    
+    <!-- Purchasing Ledger section -->
+    <div data-aos="fade-right">
+      <h2 class="font-display font-extrabold text-md text-[var(--text-primary)] mb-6 flex items-center gap-2">
+        <i data-lucide="shopping-cart" class="w-5 h-5 text-purple-500"></i> My Purchases (Escrow Lockup)
+      </h2>
+
+      <div class="flex flex-col gap-4">
+        {% for tx in purchases %}
+          <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] p-5 rounded-2xl shadow flex flex-col justify-between">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <span class="block text-[8px] font-mono uppercase text-purple-400 font-bold tracking-wider mb-1">
+                  {% if tx.context_type == 'listing' %} Market Purchase {% else %} Gig Service {% endif %}
+                </span>
+                
+                <h4 class="font-display font-bold text-xs text-[var(--text-primary)] leading-tight mb-1">
+                  {% if tx.context_type == 'listing' and tx.listing %}
+                    {{ tx.listing.title }}
+                  {% elif tx.context_type == 'gig' and tx.gig %}
+                    {{ tx.gig.title }}
+                  {% else %}
+                    Campus Plug Transaction #{{ tx.id }}
+                  {% endif %}
+                </h4>
+                
+                <span class="text-[10px] text-[var(--text-secondary)]">
+                  Seller/Freelancer: <strong>{{ tx.seller.full_name }}</strong>
+                </span>
+              </div>
+              
+              <!-- Transaction status badge -->
+              <span class="text-[9px] font-mono font-bold uppercase rounded-md shadow px-2.5 py-1 bg-[var(--bg-primary)] border
+                {% if tx.status.value == 'held_in_escrow' %} text-yellow-500 border-yellow-500/20
+                {% elif tx.status.value == 'released' %} text-green-500 border-green-500/20
+                {% elif tx.status.value == 'disputed' %} text-orange-400 border-orange-400/20
+                {% elif tx.status.value == 'refunded' %} text-blue-400 border-blue-400/20
+                {% else %} text-red-500 border-red-500/20 {% endif %}">
+                {{ tx.status.value.replace('_', ' ') }}
+              </span>
+            </div>
+
+            <div class="border-t border-[var(--color-border)] pt-4 flex items-center justify-between">
+              <div>
+                <span class="text-[8px] font-mono block text-[var(--text-secondary)] uppercase">Funds Frozen</span>
+                <span class="font-display font-extrabold text-sm text-[var(--color-accent)] font-mono">GHS {{ "{:,.2f}".format(tx.amount) }}</span>
+              </div>
+
+              {% if tx.status.value == 'held_in_escrow' %}
+                <div class="flex items-center gap-2">
+                  <form action="{{ url_for('payments.release_funds', transaction_id=tx.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-sans font-bold text-[10px] btn-lift cursor-pointer">
+                      Confirm & Release
+                    </button>
+                  </form>
+                  <form action="{{ url_for('payments.dispute_funds', transaction_id=tx.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="px-3.5 py-2 rounded-xl border border-orange-500/20 text-orange-500 hover:bg-orange-500/10 font-sans font-bold text-[10px] transition-all-smooth cursor-pointer">
+                      Report Problem
+                    </button>
+                  </form>
+                </div>
+              {% elif tx.status.value == 'disputed' %}
+                <form action="{{ url_for('payments.refund_funds', transaction_id=tx.id) }}" method="POST">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500 hover:text-white text-red-500 font-sans font-bold text-[10px] transition-all-smooth cursor-pointer">
+                    Request Refund
+                  </button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center py-16 bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl">
+            <i data-lucide="package" class="w-10 h-10 text-[var(--text-secondary)] mx-auto mb-3"></i>
+            <p class="font-sans text-xs text-[var(--text-secondary)]">You haven't locked funds for any purchases yet.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Selling Ledger section -->
+    <div data-aos="fade-left">
+      <h2 class="font-display font-extrabold text-md text-[var(--text-primary)] mb-6 flex items-center gap-2">
+        <i data-lucide="landmark" class="w-5 h-5 text-purple-500"></i> My Earnings & Payouts
+      </h2>
+
+      <div class="flex flex-col gap-4">
+        {% for tx in sales %}
+          <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] p-5 rounded-2xl shadow flex flex-col justify-between">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <span class="block text-[8px] font-mono uppercase text-amber-500 font-bold tracking-wider mb-1">
+                  {% if tx.context_type == 'listing' %} Sales Credit {% else %} Gig Freelancing {% endif %}
+                </span>
+                
+                <h4 class="font-display font-bold text-xs text-[var(--text-primary)] leading-tight mb-1">
+                  {% if tx.context_type == 'listing' and tx.listing %}
+                    {{ tx.listing.title }}
+                  {% elif tx.context_type == 'gig' and tx.gig %}
+                    {{ tx.gig.title }}
+                  {% else %}
+                    Campus Plug Service #{{ tx.id }}
+                  {% endif %}
+                </h4>
+                
+                <span class="text-[10px] text-[var(--text-secondary)]">
+                  Ordered by: <strong>{{ tx.buyer.full_name }}</strong>
+                </span>
+              </div>
+              
+              <span class="text-[9px] font-mono font-bold uppercase rounded-md shadow px-2.5 py-1 bg-[var(--bg-primary)] border
+                {% if tx.status.value == 'held_in_escrow' %} text-yellow-500 border-yellow-500/20
+                {% elif tx.status.value == 'released' %} text-green-500 border-green-500/20
+                {% elif tx.status.value == 'disputed' %} text-orange-400 border-orange-400/20
+                {% elif tx.status.value == 'refunded' %} text-blue-500 border-blue-500/20
+                {% else %} text-red-500 border-red-500/20 {% endif %}">
+                {{ tx.status.value.replace('_', ' ') }}
+              </span>
+            </div>
+
+            <div class="border-t border-[var(--color-border)] pt-4 flex items-center justify-between">
+              <div class="grid grid-cols-3 gap-3 mr-2">
+                <div>
+                  <span class="text-[8px] font-mono block text-[var(--text-secondary)] uppercase">Gross Locked</span>
+                  <span class="font-display font-bold text-[10px] text-[var(--text-primary)] font-mono">GHS {{ "{:,.2f}".format(tx.amount) }}</span>
+                </div>
+                <div>
+                  <span class="text-[8px] font-mono block text-[var(--text-secondary)] uppercase">Auth Fee (10%)</span>
+                  <span class="font-display font-bold text-[10px] text-purple-400 font-mono">GHS {{ "{:,.2f}".format(tx.platform_fee) }}</span>
+                </div>
+                <div>
+                  <span class="text-[8px] font-mono block text-[var(--text-secondary)] uppercase">Payout (90%)</span>
+                  <span class="font-display font-extrabold text-[11px] text-[var(--color-success)] font-mono">GHS {{ "{:,.2f}".format(tx.seller_payout_amount) }}</span>
+                </div>
+              </div>
+
+
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center py-16 bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl">
+            <i data-lucide="tag" class="w-10 h-10 text-[var(--text-secondary)] mx-auto mb-3"></i>
+            <p class="font-sans text-xs text-[var(--text-secondary)]">You haven't completed any product sales or freelance gigs yet.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

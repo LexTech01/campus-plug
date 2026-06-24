@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ post.title }} - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-2xl mx-auto px-4 md:px-6 py-6 relative z-10">
+
+  <!-- Back -->
+  <a href="{{ url_for('freelance.showcases_list') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] mb-4 transition">
+    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Showcases
+  </a>
+
+  <!-- Post Card -->
+  <article class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl shadow-sm overflow-hidden">
+
+    <!-- Header -->
+    <div class="px-4 md:px-6 pt-4 pb-2 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <a href="{{ url_for('auth.user_profile', user_id=post.freelancer.id) }}">
+          <img src="{{ post.freelancer.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}"
+               alt="" class="w-9 h-9 rounded-full object-cover border border-[var(--color-border)] hover:opacity-90 transition">
+        </a>
+        <div>
+          <p class="font-display font-bold text-xs text-[var(--text-primary)] flex items-center gap-1">
+            <a href="{{ url_for('auth.user_profile', user_id=post.freelancer.id) }}" class="hover:underline">{{ post.freelancer.full_name }}</a>
+            {% if post.freelancer.is_verified %}
+            <span title="Verified"><i data-lucide="badge-check" class="w-3.5 h-3.5 text-[var(--color-accent)] fill-[var(--color-brand-glow)]"></i></span>
+            {% endif %}
+          </p>
+          <p class="font-sans text-[10px] text-[var(--text-secondary)]">{{ post.created_at.strftime('%d %b %Y at %H:%M') }}</p>
+        </div>
+      </div>
+      {% if current_user.is_authenticated and (current_user.id == post.user_id or current_user.is_admin) %}
+      <form action="{{ url_for('freelance.delete_showcase', post_id=post.id) }}" method="POST" onsubmit="return confirm('Delete this post?');" class="m-0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--color-error)] hover:bg-red-500/10 transition-all-smooth"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+      </form>
+      {% endif %}
+    </div>
+
+    <!-- Body -->
+    <div class="px-4 md:px-6 py-2">
+      <h1 class="font-display font-extrabold text-base text-[var(--text-primary)] leading-snug mb-1">{{ post.title }}</h1>
+      <p class="font-sans text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-line">{{ post.content }}</p>
+    </div>
+
+    <!-- Media Carousel -->
+    {% if post.media_list %}
+    {% set media_list = post.media_list %}
+    <div class="border-t border-b border-[var(--color-border)] bg-[var(--bg-primary)] relative" id="carousel-container">
+      <div class="relative overflow-hidden">
+        {% for media in media_list %}
+        <div class="carousel-slide {% if loop.index0 != 0 %}hidden{% endif %}" data-index="{{ loop.index0 }}">
+          <img src="{{ media }}" alt="" class="w-full h-auto max-h-[500px] object-contain mx-auto bg-black/5 cursor-pointer" onclick="openLightbox({{ loop.index0 }})">
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if media_list|length > 1 %}
+      <button type="button" id="carousel-prev" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-all z-10">
+        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+      </button>
+      <button type="button" id="carousel-next" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-all z-10">
+        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+      </button>
+
+      <!-- Dots -->
+      <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10">
+        {% for media in media_list %}
+        <button type="button" class="carousel-dot w-1.5 h-1.5 rounded-full transition-all {% if loop.index0 == 0 %}bg-white w-3{% else %}bg-white/50{% endif %}" data-index="{{ loop.index0 }}"></button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Stats -->
+    <div class="px-4 md:px-6 py-2 flex items-center justify-between text-[10px] font-sans text-[var(--text-secondary)] border-b border-[var(--color-border)]">
+      <span class="like-count-{{ post.id }}">{{ post.likes|length }} like{% if post.likes|length != 1 %}s{% endif %}</span>
+      <span class="comment-count-{{ post.id }}">{{ post.comments|length }} comment{% if post.comments|length != 1 %}s{% endif %}</span>
+    </div>
+
+    <!-- Actions -->
+    <div class="px-2 py-1 flex items-center border-b border-[var(--color-border)]">
+      <div class="flex-1">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="button" data-post-id="{{ post.id }}" data-liked="{{ 'true' if liked else 'false' }}"
+                class="like-btn w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all-smooth
+          {% if liked %} text-[var(--color-brand)] {% else %} text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] {% endif %}">
+          <svg class="w-3.5 h-3.5 like-icon" fill="{% if liked %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M7 10v12"/>
+            <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/>
+          </svg>
+          <span class="like-text">{% if liked %}Liked{% else %}Like{% endif %}</span>
+        </button>
+      </div>
+      <button type="button" onclick="document.getElementById('comment-input').focus()" class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-all-smooth">
+        <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> Comment
+      </button>
+    </div>
+
+    <!-- Comments -->
+    <div class="px-4 md:px-6 py-3 bg-[var(--bg-primary)]">
+      <div class="flex flex-col gap-3 mb-3 comments-container-{{ post.id }}">
+        {% if post.comments %}
+        {% for comment in post.comments %}
+        <div class="flex items-start gap-2">
+          <img src="{{ comment.user.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}"
+               alt="" class="w-7 h-7 rounded-full object-cover flex-shrink-0">
+          <div class="flex-1">
+            <div class="bg-[var(--bg-secondary)] rounded-xl px-3 py-2 border border-[var(--color-border)]/50">
+              <p class="font-display font-bold text-[11px] text-[var(--text-primary)]">
+                <a href="{{ url_for('auth.user_profile', user_id=comment.user_id) }}" class="hover:underline">{{ comment.user.full_name }}</a>
+              </p>
+              <p class="font-sans text-xs text-[var(--text-primary)] leading-relaxed">{{ comment.content }}</p>
+            </div>
+            <p class="text-[9px] text-[var(--text-secondary)] mt-0.5 ml-1">{{ comment.created_at.strftime('%d %b %H:%M') }}</p>
+          </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+      </div>
+
+      {% if current_user.is_authenticated %}
+      <form class="m-0 flex items-center gap-2 comment-form" data-post-id="{{ post.id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <img src="{{ current_user.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}"
+             alt="" class="w-7 h-7 rounded-full object-cover flex-shrink-0">
+        <input type="text" name="content" id="comment-input" required placeholder="Write a comment..."
+               class="flex-1 text-xs px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--bg-secondary)] focus:border-[var(--color-brand)] focus:outline-none transition-all-smooth placeholder:text-[var(--text-secondary)]">
+          <button type="submit" class="p-2 rounded-lg bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white transition-all-smooth flex-shrink-0">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+          </button>
+      </form>
+      {% else %}
+      <p class="text-center text-[10px] text-[var(--text-secondary)] py-2">
+        <a href="{{ url_for('auth.login') }}" class="text-[var(--color-brand)] hover:underline font-semibold">Log in</a> to like or comment.
+      </p>
+      {% endif %}
+    </div>
+
+  </article>
+</section>
+
+<!-- Lightbox overlay -->
+<div id="lightbox" class="fixed inset-0 z-50 bg-black/90 hidden items-center justify-center" onclick="closeLightbox()">
+  <button class="absolute top-4 right-4 text-white/80 hover:text-white p-2 z-10" onclick="closeLightbox()"><i data-lucide="x" class="w-6 h-6"></i></button>
+  <button id="lb-prev" class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all z-10"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+  <button id="lb-next" class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all z-10"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+  <img id="lightbox-img" src="" alt="" class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg">
+  <div class="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/60 text-xs font-mono z-10" id="lb-counter"></div>
+</div>
+
+<script>
+var mediaUrls = {{ post.media_list | tojson | safe }};
+var currentIndex = 0;
+
+function showSlide(idx) {
+  var slides = document.querySelectorAll('.carousel-slide');
+  slides.forEach(function(s) { s.classList.add('hidden'); });
+  if (slides[idx]) {
+    slides[idx].classList.remove('hidden');
+    slides[idx].classList.add('block');
+  }
+  var dots = document.querySelectorAll('.carousel-dot');
+  dots.forEach(function(d, i) {
+    d.classList.remove('bg-white', 'w-3');
+    d.classList.add('bg-white/50');
+    if (i === idx) { d.classList.add('bg-white', 'w-3'); d.classList.remove('bg-white/50'); }
+  });
+  currentIndex = idx;
+}
+
+function nextSlide() {
+  var count = mediaUrls.length;
+  showSlide((currentIndex + 1) % count);
+}
+
+function prevSlide() {
+  var count = mediaUrls.length;
+  showSlide((currentIndex - 1 + count) % count);
+}
+
+function openLightbox(idx) {
+  currentIndex = idx;
+  updateLightbox();
+  document.getElementById('lightbox').classList.remove('hidden');
+  document.getElementById('lightbox').classList.add('flex');
+  document.body.style.overflow = 'hidden';
+}
+
+function updateLightbox() {
+  document.getElementById('lightbox-img').src = mediaUrls[currentIndex];
+  document.getElementById('lb-counter').textContent = (currentIndex + 1) + ' / ' + mediaUrls.length;
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.add('hidden');
+  document.getElementById('lightbox').classList.remove('flex');
+  document.body.style.overflow = '';
+}
+
+function escHtml(text) {
+  var d = document.createElement('div');
+  d.appendChild(document.createTextNode(text));
+  return d.innerHTML;
+}
+function csrfToken() {
+  var m = document.querySelector('input[name="csrf_token"]');
+  return m ? m.value : '';
+}
+
+document.querySelectorAll('.like-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var postId = this.dataset.postId;
+    var csrf = csrfToken();
+    var liked = this.dataset.liked === 'true';
+    fetch('/freelance/showcases/' + postId + '/like', {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded'},
+      body: 'csrf_token=' + encodeURIComponent(csrf)
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.success) {
+        btn.dataset.liked = data.liked ? 'true' : 'false';
+        btn.classList.remove('text-[var(--color-brand)]', 'text-[var(--text-secondary)]');
+        btn.classList.add(data.liked ? 'text-[var(--color-brand)]' : 'text-[var(--text-secondary)]');
+        var icon = btn.querySelector('.like-icon');
+        if (icon) icon.setAttribute('fill', data.liked ? 'currentColor' : 'none');
+        var txt = btn.querySelector('.like-text');
+        if (txt) txt.textContent = data.liked ? 'Liked' : 'Like';
+        var stat = document.querySelector('.like-count-' + postId);
+        if (stat) stat.textContent = data.count > 0 ? data.count + ' like' + (data.count !== 1 ? 's' : '') : '';
+      }
+    });
+  });
+});
+
+document.querySelectorAll('.comment-form').forEach(function(form) {
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var postId = this.dataset.postId;
+    var input = this.querySelector('input[name="content"]');
+    var content = input.value.trim();
+    if (!content) return;
+    var csrf = csrfToken();
+    fetch('/freelance/showcases/' + postId + '/comment', {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded'},
+      body: 'csrf_token=' + encodeURIComponent(csrf) + '&content=' + encodeURIComponent(content)
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.success) {
+        input.value = '';
+        var container = document.querySelector('.comments-container-' + postId);
+        var div = document.createElement('div');
+        div.className = 'flex items-start gap-2';
+        div.innerHTML =
+          '<img src="' + data.comment.user_avatar + '" alt="" class="w-7 h-7 rounded-full object-cover flex-shrink-0">' +
+          '<div class="flex-1"><div class="bg-[var(--bg-secondary)] rounded-xl px-3 py-2 border border-[var(--color-border)]/50">' +
+          '<p class="font-display font-bold text-[11px] text-[var(--text-primary)]">' +
+          '<a href="/auth/user/' + data.comment.user_id + '" class="hover:underline">' + escHtml(data.comment.user_name) + '</a></p>' +
+          '<p class="font-sans text-xs text-[var(--text-primary)] leading-relaxed">' + escHtml(data.comment.content) + '</p></div></div>';
+        container.appendChild(div);
+        var stat = document.querySelector('.comment-count-' + postId);
+        if (stat) stat.textContent = data.count > 0 ? data.count + ' comment' + (data.count !== 1 ? 's' : '') : '';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      }
+    });
+  });
+});
+
+  document.addEventListener('DOMContentLoaded', function() {
+  var prev = document.getElementById('carousel-prev');
+  var next = document.getElementById('carousel-next');
+  if (prev) prev.addEventListener('click', function(e) { e.stopPropagation(); prevSlide(); });
+  if (next) next.addEventListener('click', function(e) { e.stopPropagation(); nextSlide(); });
+  var dots = document.querySelectorAll('.carousel-dot');
+  dots.forEach(function(d) {
+    d.addEventListener('click', function(e) { e.stopPropagation(); showSlide(parseInt(this.dataset.index)); });
+  });
+  document.getElementById('lb-prev').addEventListener('click', function(e) { e.stopPropagation(); prevSlide(); updateLightbox(); });
+  document.getElementById('lb-next').addEventListener('click', function(e) { e.stopPropagation(); nextSlide(); updateLightbox(); });
+  document.addEventListener('keydown', function(e) {
+    var lb = document.getElementById('lightbox');
+    if (!lb.classList.contains('hidden')) {
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') { prevSlide(); updateLightbox(); }
+      if (e.key === 'ArrowRight') { nextSlide(); updateLightbox(); }
+    }
+  });
+});
+</script>
+{% endblock %}

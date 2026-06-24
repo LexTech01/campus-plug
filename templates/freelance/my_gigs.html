@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}My Gigs & Bids - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto px-6 py-6 relative z-10">
+  
+  <div class="mb-12 border-b border-[var(--color-border)] pb-6">
+    <h1 class="font-display font-extrabold text-2xl tracking-tight text-[var(--text-primary)]">My Campus Jobs Board</h1>
+    <p class="font-sans text-xs text-[var(--text-secondary)] mt-1">Review freelance tasks you have commissioned or bid responses you placed on other listings.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 md:gap-12">
+    
+    <!-- Left Row: Gigs I Hired Out (Client role) -->
+    <div>
+      <div class="flex items-center justify-between mb-8">
+        <h2 class="font-display font-extrabold text-md text-[var(--text-primary)] flex items-center gap-2">
+          <i data-lucide="folder-kanban" class="w-5 h-5 text-purple-500"></i> Gigs Commissioned (Client)
+        </h2>
+        <a href="{{ url_for('freelance.create_gig') }}" class="text-[10px] font-bold text-[var(--color-brand)] flex items-center gap-0.5 hover:underline"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Post Job</a>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        {% for gig in posted_gigs %}
+          <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] p-6 rounded-2xl shadow flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[9px] font-mono uppercase bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded font-bold">
+                  {{ gig.category }}
+                </span>
+                
+                <span class="text-[9px] font-mono uppercase font-bold
+                  {% if gig.status == 'open' %} text-green-500 {% else %} text-purple-400 {% endif %}">
+                  {{ gig.status }}
+                </span>
+              </div>
+
+              <h4 class="font-display font-semibold text-sm text-[var(--text-primary)] mb-1 line-clamp-1">{{ gig.title }}</h4>
+              <p class="font-display font-extrabold text-xs text-[var(--color-success)] mb-4">Budget: GHS {{ "{:,.2f}".format(gig.budget) }}</p>
+            </div>
+
+            <div class="border-t border-[var(--color-border)] pt-4 flex items-center justify-between text-[11px]">
+              <span class="font-sans text-[10px] text-[var(--text-secondary)]">Applicants: <strong class="text-[var(--text-primary)]">{{ gig.proposals|length }} Bids</strong></span>
+              
+              <a href="{{ url_for('freelance.detail', gig_id=gig.id) }}" class="px-3.5 py-1.5 rounded-lg bg-[var(--bg-tertiary)] hover:bg-[var(--color-brand)] hover:text-white text-[var(--text-primary)] transition-all-smooth font-semibold text-xs text-center">
+                Review pitches
+              </a>
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center py-12 bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl">
+            <i data-lucide="briefcase" class="w-10 h-10 text-[var(--text-secondary)] mx-auto mb-3"></i>
+            <p class="font-sans text-xs text-[var(--text-secondary)] font-medium">You haven't commissioned any tasks.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Right Row: Proposals I Placed (Freelancer role) -->
+    <div>
+      <div class="flex items-center justify-between mb-8">
+        <h2 class="font-display font-extrabold text-md text-[var(--text-primary)] flex items-center gap-2">
+          <i data-lucide="send-to-back" class="w-5 h-5 text-purple-500"></i> My Submitted Bids (Freelancer)
+        </h2>
+        <a href="{{ url_for('freelance.browse') }}" class="text-[10px] font-bold text-[var(--color-brand)] flex items-center gap-0.5 hover:underline"><i data-lucide="search" class="w-3.5 h-3.5"></i> Find work</a>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        {% for prop in proposals %}
+          <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] p-6 rounded-2xl shadow flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[10px] font-sans font-semibold text-[var(--text-secondary)] line-clamp-1 max-w-[150px]">
+                  {{ prop.gig.title }}
+                </span>
+                
+                <span class="text-[9px] font-mono uppercase font-bold
+                  {% if prop.status == 'pending' %} text-yellow-500 {% elif prop.status == 'accepted' %} text-green-500 {% else %} text-red-400 {% endif %}">
+                  {{ prop.status }}
+                </span>
+              </div>
+
+              <p class="font-sans text-xs text-[var(--text-secondary)] mb-4 italic line-clamp-2">"{{ prop.message }}"</p>
+            </div>
+
+            <div class="border-t border-[var(--color-border)] pt-4 flex items-center justify-between text-[11px]">
+              <div>
+                <span class="text-[8px] font-mono uppercase block text-[var(--text-secondary)]">Your pitch rate</span>
+                <span class="font-display font-extrabold text-xs text-[var(--color-accent)] font-mono">GHS {{ "{:,.2f}".format(prop.price) }}</span>
+              </div>
+              
+              <a href="{{ url_for('freelance.detail', gig_id=prop.gig_id) }}" class="text-xs font-semibold text-[var(--color-brand)] flex items-center gap-0.5">
+                Inspect Task <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+              </a>
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center py-12 bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl">
+            <i data-lucide="file-pen-line" class="w-10 h-10 text-[var(--text-secondary)] mx-auto mb-3"></i>
+            <p class="font-sans text-xs text-[var(--text-secondary)] font-medium">You haven't bid on any gigs yet.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

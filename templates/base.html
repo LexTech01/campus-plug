@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Campus Plug - Ghana Student Marketplace{% endblock %}</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Sora', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Custom design token variables and micro-interactions -->
+  <link rel="stylesheet" href="/static/css/style.css">
+  
+  <!-- Lucide Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.475.0/dist/umd/lucide.min.js"></script>
+  
+  {% block head %}{% endblock %}
+
+  <!-- Prevent flash of dark/light theme -->
+  <script>
+    (function () {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'light') {
+        document.documentElement.classList.remove('dark');
+      } else {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+</head>
+<body class="bg-[var(--bg-primary)] text-[var(--text-primary)] relative min-h-screen flex flex-col antialiased">
+  
+  <!-- Ambient Backdrop Glows -->
+  <div class="bg-glow-purple top-[5vh] left-[5vw]"></div>
+  <div class="bg-glow-teal top-[35vh] right-[10vw] opacity-80"></div>
+  <div class="bg-glow-purple top-[70vh] left-[15vw] opacity-50"></div>
+  <div class="bg-glow-orange top-[110vh] right-[5vw] opacity-60"></div>
+  <div class="bg-glow-teal top-[170vh] left-[8vw] opacity-55"></div>
+  <div class="bg-glow-purple top-[210vh] right-[12vw] opacity-50"></div>
+
+  <!-- Toast Feed notifications -->
+  <div id="toast-container" class="fixed top-24 right-6 z-50 flex flex-col gap-3 max-w-sm w-full">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="toast-alert flex items-start justify-between p-4 bg-[var(--bg-secondary)] border-l-4 rounded-r-lg shadow-xl translate-all-smooth transform translate-x-0 cursor-pointer
+            {% if category == 'success' %} border-green-500 {% elif category == 'danger' or category == 'error' %} border-red-500 {% elif category == 'warning' %} border-yellow-500 {% else %} border-purple-500 {% endif %}"
+            id="toast-{{ loop.index }}">
+            <div class="flex items-start gap-3">
+              <span class="mt-0.5">
+                {% if category == 'success' %}
+                  <i data-lucide="circle-check" class="w-5 h-5 text-green-500"></i>
+                {% elif category == 'danger' or category == 'error' %}
+                  <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i>
+                {% elif category == 'warning' %}
+                  <i data-lucide="help-circle" class="w-5 h-5 text-yellow-500"></i>
+                {% else %}
+                  <i data-lucide="info" class="w-5 h-5 text-purple-500"></i>
+                {% endif %}
+              </span>
+              <div>
+                <p class="font-sans font-medium text-xs text-[var(--text-primary)]">{{ message }}</p>
+              </div>
+            </div>
+            <button class="toast-close-btn ml-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- Navigation Bar -->
+  {% if not request.endpoint or not request.endpoint.startswith('admin.') %}
+  <header id="main-header" class="fixed top-0 left-0 w-full z-40 py-5 transition-all duration-300 bg-transparent flex items-center">
+    <div class="max-w-7xl mx-auto w-full px-6 flex items-center justify-between">
+      <!-- Logo -->
+      <a href="{{ url_for('index') }}" class="flex items-center gap-2.5 z-50">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-amber-500 flex items-center justify-center shadow-lg transform rotate-3">
+          <i data-lucide="zap" class="w-5 h-5 text-white transform -rotate-3"></i>
+        </div>
+        <span class="font-display font-extrabold text-lg tracking-tight bg-gradient-to-r from-purple-500 via-pink-500 to-amber-500 bg-clip-text text-transparent">Campus Plug</span>
+      </a>
+
+      <!-- Desktop Links -->
+      <nav class="hidden md:flex items-center gap-8">
+        <a href="{{ url_for('marketplace.browse') }}" class="font-sans font-semibold text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all-smooth relative group">
+          Marketplace
+          <span class="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-amber-400 group-hover:w-full transition-all duration-300"></span>
+        </a>
+        <a href="{{ url_for('freelance.browse') }}" class="font-sans font-semibold text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all-smooth relative group">
+          Freelance Gigs
+          <span class="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-amber-400 group-hover:w-full transition-all duration-300"></span>
+        </a>
+        <a href="{{ url_for('freelance.showcases_list') }}" class="font-sans font-semibold text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all-smooth relative group">
+          Showcases
+          <span class="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-amber-400 group-hover:w-full transition-all duration-300"></span>
+        </a>
+        <a href="{{ url_for('map.sellers_map') }}" class="font-sans font-semibold text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all-smooth relative group">
+          Seller Map
+          <span class="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-amber-400 group-hover:w-full transition-all duration-300"></span>
+        </a>
+        <a href="{{ url_for('index') }}#how-it-works" class="font-sans font-semibold text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all-smooth relative group">
+          How It Works
+          <span class="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-amber-400 group-hover:w-full transition-all duration-300"></span>
+        </a>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('leaderboard') }}" class="font-sans font-semibold text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all-smooth relative group" title="Leaderboard">
+          <i data-lucide="trophy" class="w-3.5 h-3.5 inline text-amber-400"></i>
+          <span class="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-gradient-to-r from-amber-400 to-purple-500 group-hover:w-full transition-all duration-300"></span>
+        </a>
+        <a href="{{ url_for('auth.referrals') }}" class="font-sans font-semibold text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all-smooth relative group" title="Refer & Earn">
+          <i data-lucide="gift" class="w-3.5 h-3.5 inline text-green-400"></i>
+          <span class="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-gradient-to-r from-green-500 to-emerald-400 group-hover:w-full transition-all duration-300"></span>
+        </a>
+        {% endif %}
+      </nav>
+
+      <!-- Desktop Auth Elements -->
+      <div class="hidden md:flex items-center gap-4">
+        {% if current_user.is_authenticated %}
+          <!-- Messages -->
+          <a href="{{ url_for('chat.inbox') }}" class="p-2.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] hover:scale-105 transition-all-smooth relative" aria-label="Messages">
+            <i data-lucide="message-square" class="w-5 h-5"></i>
+            {% if unread_messages_count > 0 %}
+              <span class="absolute -top-1 -right-1 w-4 h-4 bg-purple-600 rounded-full text-white font-sans font-extrabold text-[8px] flex items-center justify-center shadow">
+                {{ unread_messages_count }}
+              </span>
+            {% endif %}
+          </a>
+
+          <!-- Notifications Bell with Dropdown -->
+          <div class="relative group">
+            <button class="p-2.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] hover:scale-105 transition-all-smooth relative" aria-label="Notifications">
+              <i data-lucide="bell" class="w-5 h-5"></i>
+              {% if unread_notifications_count > 0 %}
+                <span class="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full text-white font-sans font-bold text-[8px] flex items-center justify-center shadow-lg animate-pulse">
+                  {{ unread_notifications_count }}
+                </span>
+              {% endif %}
+            </button>
+            
+            <!-- Dropdown Panel -->
+            <div class="absolute right-0 top-11 w-80 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--color-border)] shadow-2xl p-4 hidden group-hover:block z-50 glass-card text-left">
+              <div class="flex items-center justify-between border-b border-[var(--color-border)] pb-2 mb-3">
+                <h4 class="font-display font-extrabold text-xs text-[var(--text-primary)]">Notifications</h4>
+                {% if unread_notifications_count > 0 %}
+                  <form action="{{ url_for('auth.read_all_notifications') }}" method="POST" class="m-0 inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="text-[9px] font-mono text-purple-400 hover:underline cursor-pointer">Mark all read</button>
+                  </form>
+                {% endif %}
+              </div>
+              
+              <div class="flex flex-col gap-2 max-h-60 overflow-y-auto">
+                {% for n in recent_notifications %}
+                  <a href="{{ url_for('auth.read_notification', notification_id=n.id) }}" 
+                     class="p-2.5 rounded-xl text-left border {% if not n.is_read %} border-purple-500/30 bg-purple-500/[0.02] {% else %} border-[var(--color-border)] {% endif %} hover:bg-[var(--bg-tertiary)] transition-all-smooth flex gap-3 text-left">
+                    <div class="p-1.5 rounded bg-purple-500/10 text-purple-400 flex-shrink-0 self-start">
+                      {% if n.notification_type == 'message' %}
+                        <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                      {% elif n.notification_type == 'proposal' %}
+                        <i data-lucide="briefcase" class="w-3.5 h-3.5"></i>
+                      {% else %}
+                        <i data-lucide="bell" class="w-3.5 h-3.5"></i>
+                      {% endif %}
+                    </div>
+                    <div class="text-left">
+                      <p class="text-[10px] text-[var(--text-primary)] leading-snug font-sans {% if not n.is_read %}font-semibold{% endif %}">{{ n.message }}</p>
+                      <span class="text-[8px] font-mono text-[var(--text-secondary)] mt-1 block">{{ n.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                  </a>
+                {% else %}
+                  <div class="text-center py-6 text-[var(--text-secondary)] text-[10px] font-sans">
+                    No notification updates yet.
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Escrow Dashboard -->
+          <a href="{{ url_for('payments.dashboard') }}" class="p-2.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] hover:scale-105 transition-all-smooth relative" aria-label="Escrow Payouts">
+            <i data-lucide="wallet" class="w-5 h-5"></i>
+          </a>
+
+          <!-- Dropdown Profile Action -->
+          <div class="relative group">
+            <button class="flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] hover:bg-[var(--bg-tertiary)] transition-all-smooth">
+              <img src="{{ current_user.avatar or 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}" alt="avatar" class="w-6 h-6 rounded-full object-cover">
+              <span class="font-sans font-semibold text-xs max-w-[80px] truncate-ellipsis text-[var(--text-primary)]">{{ current_user.full_name }}</span>
+              <i data-lucide="chevron-down" class="w-3 h-3 text-[var(--text-secondary)]"></i>
+            </button>
+            
+            <!-- Context Menu items -->
+            <div class="absolute right-0 top-11 w-48 bg-[var(--bg-secondary)] rounded-xl border border-[var(--color-border)] shadow-xl p-2 hidden group-hover:flex flex-col gap-1 z-50">
+              <div class="px-3 py-1.5 border-b border-[var(--color-border)] mb-1">
+                <span class="block text-[10px] font-mono text-[var(--text-secondary)] uppercase tracking-wider">Campus Account</span>
+                <span class="block text-xs font-semibold truncate">{{ current_user.university }}</span>
+              </div>
+              {% if current_user.account_type in ('seller', 'admin') %}
+              <a href="{{ url_for('marketplace.my_listings') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs hover:bg-[var(--bg-tertiary)] transition-all-smooth">
+                <i data-lucide="tag" class="w-3.5 h-3.5"></i> My Listings
+              </a>
+              {% endif %}
+              <a href="{{ url_for('freelance.my_gigs') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs hover:bg-[var(--bg-tertiary)] transition-all-smooth">
+                <i data-lucide="briefcase" class="w-3.5 h-3.5"></i> My Gigs & Bids
+              </a>
+              {% if current_user.is_admin %}
+              <a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-amber-400 hover:bg-amber-500/10 transition-all-smooth">
+                <i data-lucide="shield" class="w-3.5 h-3.5"></i> Admin Panel
+              </a>
+              {% endif %}
+              <a href="{{ url_for('auth.settings') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs hover:bg-[var(--bg-tertiary)] transition-all-smooth">
+                <i data-lucide="settings" class="w-3.5 h-3.5"></i> Profile Settings
+              </a>
+              <a href="{{ url_for('auth.logout') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-red-500 hover:bg-red-500/10 transition-all-smooth mt-1">
+                <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Sign Out
+              </a>
+            </div>
+          </div>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="font-sans font-bold text-xs text-[var(--text-primary)] px-5 py-2.5 rounded-full border border-[var(--color-border)] hover:bg-[var(--bg-tertiary)] hover:scale-105 transition-all-smooth bg-[var(--bg-secondary)]">Sign In</a>
+          <a href="{{ url_for('auth.register') }}" class="font-sans font-bold text-xs text-white px-5 py-2.5 rounded-full bg-[var(--color-brand)] btn-lift">Sign Up</a>
+        {% endif %}
+      </div>
+
+      <!-- Hamburger (Mobile) -->
+      <div class="flex items-center gap-2 md:hidden">
+        {% if not current_user.is_authenticated %}
+        <a href="{{ url_for('auth.register') }}" class="px-4 py-2 rounded-full bg-[var(--color-brand)] text-white font-sans font-bold text-[10px] btn-lift whitespace-nowrap">Sign Up</a>
+        {% endif %}
+        <button id="menu-btn" class="p-2.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] z-50" aria-label="Toggle Mobile Menu" aria-expanded="false">
+          <i id="menu-icon-open" data-lucide="menu" class="w-5 h-5"></i>
+          <i id="menu-icon-close" data-lucide="x" class="w-5 h-5 hidden"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+  {% endif %}
+
+  {% if not request.endpoint or not request.endpoint.startswith('admin.') %}
+  <!-- Mobile Slide-In Menu Backdrop -->
+  <div id="mobile-backdrop" class="fixed inset-0 bg-black/40 z-30 hidden"></div>
+
+  <!-- Mobile Slide-In Menu -->
+  <div id="mobile-menu" class="fixed top-0 right-0 w-full max-w-sm h-screen bg-[var(--bg-secondary)] border-l border-[var(--color-border)] px-6 pt-20 pb-8 flex flex-col gap-6 shadow-2xl z-40 translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto">
+      <nav class="flex flex-col gap-4">
+        <a href="{{ url_for('marketplace.browse') }}" class="font-sans font-bold text-lg text-[var(--text-primary)] flex items-center gap-2"><i data-lucide="tag" class="w-5 h-5 text-[var(--color-brand)]"></i> Marketplace</a>
+        <a href="{{ url_for('freelance.browse') }}" class="font-sans font-bold text-lg text-[var(--text-primary)] flex items-center gap-2"><i data-lucide="briefcase" class="w-5 h-5 text-[var(--color-brand)]"></i> Freelance Gigs</a>
+        <a href="{{ url_for('freelance.showcases_list') }}" class="font-sans font-bold text-lg text-[var(--text-primary)] flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-[var(--color-brand)]"></i> Showcases</a>
+        <a href="{{ url_for('map.sellers_map') }}" class="font-sans font-bold text-lg text-[var(--text-primary)] flex items-center gap-2"><i data-lucide="map" class="w-5 h-5 text-[var(--color-brand)]"></i> Seller Map</a>
+        <a href="{{ url_for('index') }}#how-it-works" class="font-sans font-bold text-lg text-[var(--text-primary)] flex items-center gap-2"><i data-lucide="help-circle" class="w-5 h-5 text-[var(--color-brand)]"></i> How It Works</a>
+        <a href="{{ url_for('leaderboard') }}" class="font-sans font-bold text-lg text-[var(--text-primary)] flex items-center gap-2"><i data-lucide="trophy" class="w-5 h-5 text-amber-400"></i> Leaderboard</a>
+        <a href="{{ url_for('auth.referrals') }}" class="font-sans font-bold text-lg text-[var(--text-primary)] flex items-center gap-2"><i data-lucide="gift" class="w-5 h-5 text-green-400"></i> Refer & Earn</a>
+        {% if current_user.is_admin %}
+        <div class="h-[1px] bg-amber-500/20 my-2"></div>
+        <a href="{{ url_for('admin.dashboard') }}" class="font-sans font-bold text-lg text-amber-400 flex items-center gap-2"><i data-lucide="shield" class="w-5 h-5 text-amber-400"></i> Admin Panel</a>
+        {% endif %}
+      </nav>
+      
+      <div class="h-[1px] bg-[var(--color-border)]"></div>
+      
+      <div class="flex flex-col gap-4">
+        {% if current_user.is_authenticated %}
+          <div class="flex items-center justify-between gap-3 px-2 mb-2">
+            <div class="flex items-center gap-3">
+              <img src="{{ current_user.avatar or '/static/images/default-avatar.png' }}" alt="avatar" class="w-10 h-10 rounded-full object-cover">
+              <div>
+                <p class="font-display font-extrabold text-sm text-[var(--text-primary)]">{{ current_user.full_name }}</p>
+                <p class="font-sans font-medium text-xs text-[var(--text-secondary)]">{{ current_user.university }}</p>
+              </div>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-red-500 bg-red-500/10 hover:bg-red-500/20 text-[11px] font-semibold transition-all-smooth flex-shrink-0"><i data-lucide="log-out" class="w-3.5 h-3.5"></i> Sign Out</a>
+          </div>
+          <a href="{{ url_for('chat.inbox') }}" class="flex items-center gap-3 font-semibold text-sm px-4 py-2 bg-[var(--bg-tertiary)] rounded-xl text-[var(--text-primary)]"><i data-lucide="message-square" class="w-5 h-5"></i> Chats</a>
+          <a href="{{ url_for('payments.dashboard') }}" class="flex items-center gap-3 font-semibold text-sm px-4 py-2 bg-[var(--bg-tertiary)] rounded-xl text-[var(--text-primary)]"><i data-lucide="wallet" class="w-5 h-5"></i> Escrow Dashboard</a>
+          <a href="{{ url_for('freelance.my_gigs') }}" class="flex items-center gap-3 font-semibold text-sm px-4 py-2 bg-[var(--bg-tertiary)] rounded-xl text-[var(--text-primary)]"><i data-lucide="briefcase" class="w-5 h-5"></i> My Gigs &amp; Bids</a>
+          {% if current_user.account_type in ('seller', 'admin') %}
+          <a href="{{ url_for('marketplace.my_listings') }}" class="flex items-center gap-3 font-semibold text-sm px-4 py-2 bg-[var(--bg-tertiary)] rounded-xl text-[var(--text-primary)]"><i data-lucide="bookmark" class="w-5 h-5"></i> My Listings</a>
+          {% endif %}
+          <a href="{{ url_for('auth.settings') }}" class="flex items-center gap-3 font-semibold text-sm px-4 py-2 bg-[var(--bg-tertiary)] rounded-xl text-[var(--text-primary)]"><i data-lucide="settings" class="w-5 h-5"></i> Profile Settings</a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="font-sans text-center font-bold text-sm text-[var(--text-primary)] border border-[var(--color-border)] py-3 rounded-xl hover:bg-[var(--bg-tertiary)] transition-all-smooth bg-[var(--bg-secondary)]">Sign In</a>
+          <a href="{{ url_for('auth.register') }}" class="font-sans text-center font-bold text-sm text-white bg-[var(--color-brand)] py-3 rounded-xl hover:bg-opacity-90 active:scale-95 transition-all-smooth">Sign Up</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Content Block container -->
+  <main class="{% if request.endpoint and request.endpoint.startswith('admin.') %}flex-grow z-10{% else %}flex-grow pt-24 md:pt-28 z-10{% endif %}">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% if not request.endpoint or not request.endpoint.startswith('admin.') %}
+  <!-- Footer -->
+  <footer class="bg-[var(--bg-secondary)] border-t border-[var(--color-border)] pt-10 pb-6 px-6 mt-20 relative z-20">
+    <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-10 mb-8">
+      <div class="col-span-2 md:col-span-1">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-amber-500 flex items-center justify-center shadow-md">
+            <i data-lucide="zap" class="w-4 h-4 text-white"></i>
+          </div>
+          <span class="font-display font-extrabold text-sm tracking-tight bg-gradient-to-r from-purple-500 to-amber-500 bg-clip-text text-transparent">Campus Plug</span>
+        </div>
+        <p class="font-sans text-[11px] text-[var(--text-secondary)] leading-relaxed max-w-xs">
+          Ghana's peer-to-peer hub for marketplace listings, freelance gigs, and secure MoMo escrow payments.
+        </p>
+        <div class="flex items-center gap-2 mt-4">
+          <a href="mailto:{{ SUPPORT_EMAIL }}" class="w-8 h-8 rounded-full bg-[var(--bg-primary)] border border-[var(--color-border)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--color-brand)] hover:border-[var(--color-brand)] transition-all-smooth">
+            <i data-lucide="mail" class="w-3.5 h-3.5"></i>
+          </a>
+          <a href="{{ url_for('terms') }}" class="w-8 h-8 rounded-full bg-[var(--bg-primary)] border border-[var(--color-border)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--color-brand)] hover:border-[var(--color-brand)] transition-all-smooth">
+            <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+          </a>
+        </div>
+      </div>
+      <div>
+        <h4 class="font-display font-bold text-[11px] uppercase tracking-wider text-[var(--text-secondary)] mb-3">Hubs</h4>
+        <ul class="flex flex-col gap-1.5 font-sans text-[11px] text-[var(--text-secondary)]">
+          <li>University of Ghana</li>
+          <li>KNUST (Kumasi)</li>
+          <li>Ashesi University</li>
+          <li>University of Cape Coast</li>
+          <li>UPSA & GIMPA</li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-display font-bold text-[11px] uppercase tracking-wider text-[var(--text-secondary)] mb-3">Features</h4>
+        <ul class="flex flex-col gap-1.5 font-sans text-[11px]">
+          <li><a href="{{ url_for('marketplace.browse') }}" class="text-[var(--text-secondary)] hover:text-[var(--color-brand)] transition-all-smooth">P2P Shopping</a></li>
+          <li><a href="{{ url_for('freelance.browse') }}" class="text-[var(--text-secondary)] hover:text-[var(--color-brand)] transition-all-smooth">Freelance Gigs</a></li>
+          <li><a href="{{ url_for('payments.dashboard') }}" class="text-[var(--text-secondary)] hover:text-[var(--color-brand)] transition-all-smooth">MoMo Escrow</a></li>
+          <li><a href="{{ url_for('chat.inbox') }}" class="text-[var(--text-secondary)] hover:text-[var(--color-brand)] transition-all-smooth">Student Chats</a></li>
+        </ul>
+      </div>
+      <div class="col-span-2 md:col-span-1">
+        <h4 class="font-display font-bold text-[11px] uppercase tracking-wider text-[var(--text-secondary)] mb-3">Trust & Safety</h4>
+        <p class="font-sans text-[11px] text-[var(--text-secondary)] leading-relaxed mb-3">
+          Free to join. 10% platform fee on completed transactions. Local dispute mediation included.
+        </p>
+        <div class="flex flex-wrap gap-2">
+          <span class="px-2.5 py-1 rounded-full bg-[var(--bg-primary)] border border-[var(--color-border)] font-mono text-[9px] text-[var(--text-secondary)]">MTN MoMo</span>
+          <span class="px-2.5 py-1 rounded-full bg-[var(--bg-primary)] border border-[var(--color-border)] font-mono text-[9px] text-[var(--text-secondary)]">Telecel</span>
+          <span class="px-2.5 py-1 rounded-full bg-[var(--bg-primary)] border border-[var(--color-border)] font-mono text-[9px] text-[var(--text-secondary)]">AirtelTigo</span>
+        </div>
+      </div>
+    </div>
+    <div class="max-w-7xl mx-auto h-px bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent mb-5"></div>
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 font-sans text-[10px] text-[var(--text-secondary)] footer-bottom-text">
+      <p>&copy; 2026 Campus Plug Ghana. All rights reserved.</p>
+      <div class="flex items-center gap-3">
+        <a href="{{ url_for('terms') }}" class="hover:text-[var(--color-brand)] transition-all-smooth">Terms</a>
+        <span class="w-1 h-1 rounded-full bg-[var(--color-border)]"></span>
+        <a href="mailto:{{ SUPPORT_EMAIL }}" class="hover:text-[var(--color-brand)] transition-all-smooth">Support</a>
+        <span class="w-1 h-1 rounded-full bg-[var(--color-border)]"></span>
+        <span>Ghana FinTech</span>
+      </div>
+    </div>
+  </footer>
+  {% endif %}
+
+  <!-- Modular Scripts -->
+  <script src="/static/js/theme-toggle.js"></script>
+  <script src="/static/js/animations.js"></script>
+  <script src="/static/js/filters.js"></script>
+  <script src="/static/js/toasts.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+  </script>
+  
+  {% block scripts %}{% endblock %}
+</body>
+</html>

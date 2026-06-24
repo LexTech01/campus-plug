@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Gig Moderation - Campus Plug Admin{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-[var(--bg-primary)]">
+  <div class="flex">
+    {% include 'admin/_sidebar.html' %}
+
+    <div class="flex-1 p-6 lg:p-8 ml-0 lg:ml-64">
+      <div class="max-w-7xl mx-auto">
+
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-extrabold text-[var(--text-primary)]">Gigs</h1>
+            <p class="text-sm text-[var(--text-secondary)] mt-1">Moderate freelance gigs</p>
+          </div>
+        </div>
+
+        <!-- Search -->
+        <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl p-4 mb-6">
+          <form method="GET" class="flex gap-3">
+            <div class="relative flex-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" name="search" value="{{ search or '' }}" placeholder="Search by title, description..." class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)] focus:ring-1 focus:ring-purple-500 focus:border-purple-500">
+            </div>
+            <button type="submit" class="px-4 py-2.5 bg-purple-600 text-white text-sm font-bold rounded-lg hover:bg-purple-700 transition">Search</button>
+            {% if search %}<a href="{{ url_for('admin.gigs_list') }}" class="px-4 py-2.5 border border-[var(--color-border)] text-sm font-bold rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition">Clear</a>{% endif %}
+          </form>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl overflow-hidden">
+          <div class="overflow-x-auto max-h-[600px] overflow-y-auto" style="scrollbar-width: thin;">
+            <table class="w-full text-left">
+              <thead>
+                <tr class="border-b border-[var(--color-border)] bg-[var(--bg-tertiary)]">
+                  <th class="p-4 pl-6 text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Gig</th>
+                  <th class="p-4 text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Client</th>
+                  <th class="p-4 text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Budget</th>
+                  <th class="p-4 text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Proposals</th>
+                  <th class="p-4 text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Status</th>
+                  <th class="p-4 pr-6 text-right text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Moderation</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--color-border)]">
+                {% if gigs %}
+                  {% for gig in gigs %}
+                  <tr class="hover:bg-[var(--bg-primary)]/40 transition">
+                    <td class="p-4 pl-6 max-w-xs">
+                      <p class="font-bold text-sm text-[var(--text-primary)] truncate">{{ gig.title }}</p>
+                      <p class="text-xs text-[var(--text-secondary)]">#{{ gig.id }} • {{ gig.category }}</p>
+                    </td>
+                    <td class="p-4">
+                      {% if gig.client %}
+                      <a href="{{ url_for('admin.user_detail', user_id=gig.client.id) }}" class="font-bold text-sm text-[var(--text-primary)] hover:underline">{{ gig.client.full_name }}</a>
+                      <p class="text-xs text-[var(--text-secondary)]">{{ gig.university }}</p>
+                      {% else %}
+                      <span class="text-xs text-red-500">Unknown</span>
+                      {% endif %}
+                    </td>
+                    <td class="p-4 font-mono font-bold text-sm text-[var(--text-primary)]">
+                      GHS {{ "{:,.2f}".format(gig.budget) }}
+                      <span class="block text-xs text-[var(--text-secondary)] font-normal">{{ gig.budget_type }}</span>
+                    </td>
+                    <td class="p-4 text-sm font-mono text-purple-400">{{ gig.proposals | length }}</td>
+                    <td class="p-4">
+                      <div class="flex flex-col gap-1">
+                        <span class="inline-block px-2 py-0.5 rounded text-xs font-bold {% if gig.removed_by_admin %}bg-red-500/10 text-red-500{% else %}bg-green-500/10 text-green-500{% endif %}">
+                          {% if gig.removed_by_admin %}Hidden{% else %}Visible{% endif %}
+                        </span>
+                        <span class="inline-block px-2 py-0.5 bg-purple-500/10 text-purple-400 text-xs font-bold rounded">{{ gig.status }}</span>
+                      </div>
+                    </td>
+                    <td class="p-4 pr-6 text-right">
+                      <form action="{{ url_for('admin.toggle_remove_gig', gig_id=gig.id) }}" method="POST" class="flex items-center justify-end gap-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="text" name="note" required placeholder="Reason..." class="w-32 p-1.5 px-2 rounded-lg border border-[var(--color-border)] bg-[var(--bg-primary)] text-xs text-[var(--text-primary)]">
+                        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-bold {% if gig.removed_by_admin %}bg-green-600 text-white hover:bg-green-700{% else %}bg-red-600 text-white hover:bg-red-700{% endif %} transition">
+                          {% if gig.removed_by_admin %}Restore{% else %}Remove{% endif %}
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="6" class="p-12 text-center text-sm text-[var(--text-secondary)] italic">No gigs found</td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+
+          {% if pagination and pagination.pages > 1 %}
+          <div class="flex items-center justify-between p-4 border-t border-[var(--color-border)] bg-[var(--bg-tertiary)]">
+            <span class="text-xs text-[var(--text-secondary)]">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+            <div class="flex gap-2">
+              {% if pagination.has_prev %}
+              <a href="{{ url_for('admin.gigs_list', page=pagination.prev_num, search=search) }}" class="px-3 py-1.5 border border-[var(--color-border)] rounded-lg text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--bg-primary)] transition">Previous</a>
+              {% endif %}
+              {% if pagination.has_next %}
+              <a href="{{ url_for('admin.gigs_list', page=pagination.next_num, search=search) }}" class="px-3 py-1.5 border border-[var(--color-border)] rounded-lg text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--bg-primary)] transition">Next</a>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

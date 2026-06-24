@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Dispute Resolution - Campus Plug Admin{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-[var(--bg-primary)]">
+  <div class="flex">
+    {% include 'admin/_sidebar.html' %}
+
+    <div class="flex-1 p-6 lg:p-8 ml-0 lg:ml-64">
+      <div class="max-w-7xl mx-auto">
+
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-extrabold text-[var(--text-primary)]">Disputes</h1>
+            <p class="text-sm text-[var(--text-secondary)] mt-1">Resolve escrow disputes</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <!-- Active Disputes -->
+          <div class="lg:col-span-2 space-y-4">
+            {% if disputes %}
+              {% for dispute in disputes %}
+              <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl p-6">
+                <!-- Header -->
+                <div class="flex items-center justify-between pb-4 border-b border-[var(--color-border)] mb-4">
+                  <div>
+                    <span class="inline-block px-2 py-0.5 bg-red-500/10 text-red-500 text-xs font-bold rounded mb-2">Transaction #{{ dispute.id }}</span>
+                    <p class="text-xs text-[var(--text-secondary)]">Initiated {{ dispute.paid_at.strftime('%d %b %Y %H:%M') if dispute.paid_at else 'N/A' }}</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-xs text-[var(--text-secondary)]">Amount</p>
+                    <p class="font-extrabold text-lg text-red-500 font-mono">GHS {{ "{:,.2f}".format(dispute.amount) }}</p>
+                  </div>
+                </div>
+
+                <!-- Parties -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                  <div class="p-3 bg-[var(--bg-primary)] border border-[var(--color-border)] rounded-lg">
+                    <p class="text-xs font-mono uppercase tracking-wider text-blue-400 mb-1">Buyer</p>
+                    <a href="{{ url_for('admin.user_detail', user_id=dispute.buyer.id) }}" class="font-bold text-sm text-[var(--text-primary)] hover:underline">{{ dispute.buyer.full_name }}</a>
+                    <p class="text-xs text-[var(--text-secondary)]">{{ dispute.buyer.phone }} • {{ dispute.buyer.university }}</p>
+                  </div>
+                  <div class="p-3 bg-[var(--bg-primary)] border border-[var(--color-border)] rounded-lg">
+                    <p class="text-xs font-mono uppercase tracking-wider text-green-400 mb-1">Seller</p>
+                    <a href="{{ url_for('admin.user_detail', user_id=dispute.seller.id) }}" class="font-bold text-sm text-[var(--text-primary)] hover:underline">{{ dispute.seller.full_name }}</a>
+                    <p class="text-xs text-[var(--text-secondary)]">{{ dispute.seller.phone or 'No phone' }} • {{ dispute.seller.momo_provider or 'No MoMo' }}</p>
+                  </div>
+                </div>
+
+                <!-- Context -->
+                <div class="p-3 bg-[var(--bg-primary)] border border-[var(--color-border)] rounded-lg mb-4 text-xs text-[var(--text-secondary)]">
+                  {% if dispute.listing %}
+                    <strong class="text-[var(--text-primary)]">Item:</strong> {{ dispute.listing.title }}<br>
+                    <strong class="text-[var(--text-primary)]">Condition:</strong> {{ dispute.listing.condition }} • <strong class="text-[var(--text-primary)]">University:</strong> {{ dispute.listing.university }}
+                  {% elif dispute.gig %}
+                    <strong class="text-[var(--text-primary)]">Project:</strong> {{ dispute.gig.title }}<br>
+                    <strong class="text-[var(--text-primary)]">Deadline:</strong> {{ dispute.gig.deadline }} • <strong class="text-[var(--text-primary)]">Category:</strong> {{ dispute.gig.category }}
+                  {% endif %}
+                </div>
+
+                <!-- Resolution Form -->
+                <form action="{{ url_for('admin.resolve_dispute', transaction_id=dispute.id) }}" method="POST" class="bg-[var(--bg-primary)] border border-[var(--color-border)] rounded-lg p-4">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <p class="font-bold text-sm text-[var(--text-primary)] mb-3">Resolution Decision</p>
+                  <div class="grid grid-cols-2 gap-3 mb-3">
+                    <label class="flex items-center gap-2 p-3 border border-[var(--color-border)] rounded-lg cursor-pointer hover:bg-[var(--bg-tertiary)] transition">
+                      <input type="radio" name="decision" value="release" required class="accent-purple-600">
+                      <div>
+                        <p class="font-bold text-xs text-[var(--text-primary)]">Release to Seller</p>
+                        <p class="text-xs text-green-500">GHS {{ dispute.seller_payout_amount }}</p>
+                      </div>
+                    </label>
+                    <label class="flex items-center gap-2 p-3 border border-[var(--color-border)] rounded-lg cursor-pointer hover:bg-[var(--bg-tertiary)] transition">
+                      <input type="radio" name="decision" value="refund" required class="accent-purple-600">
+                      <div>
+                        <p class="font-bold text-xs text-[var(--text-primary)]">Refund to Buyer</p>
+                        <p class="text-xs text-red-500">GHS {{ dispute.amount }}</p>
+                      </div>
+                    </label>
+                  </div>
+                  <textarea name="note" required rows="2" placeholder="Describe your decision and reasoning..." class="w-full p-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--bg-primary)] text-xs text-[var(--text-primary)] mb-3"></textarea>
+                  <button type="submit" class="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-lg transition flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Execute Decision
+                  </button>
+                </form>
+              </div>
+              {% endfor %}
+            {% else %}
+            <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl p-12 text-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3 text-green-500"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <p class="text-sm text-[var(--text-secondary)] italic">No active disputes. Everything looks good!</p>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Resolution Log -->
+          <div class="lg:col-span-1">
+            <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl p-6">
+              <h3 class="font-extrabold text-sm text-[var(--text-primary)] mb-4 pb-3 border-b border-[var(--color-border)]">Resolution History</h3>
+              {% if logs %}
+              <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1" style="scrollbar-width: thin;">
+                {% for log in logs %}
+                <div class="border-l-2 border-orange-500 pl-3 py-1 flex-shrink-0">
+                  <p class="text-xs font-mono text-[var(--text-secondary)]">{{ log.created_at.strftime('%d %b %H:%M') }}</p>
+                  <p class="text-sm font-bold text-[var(--text-primary)]">
+                    {% if log.action == 'resolve_dispute_release' %}Released to Seller{% else %}Refunded to Buyer{% endif %}
+                  </p>
+                  <p class="text-xs text-[var(--text-secondary)]">"{{ log.note }}"</p>
+                </div>
+                {% endfor %}
+              </div>
+              {% else %}
+              <p class="text-sm text-[var(--text-secondary)] italic text-center py-6">No resolved cases</p>
+              {% endif %}
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

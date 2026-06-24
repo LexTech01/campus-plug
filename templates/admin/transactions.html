@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Transaction Log - Campus Plug Admin{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-[var(--bg-primary)]">
+  <div class="flex">
+    {% include 'admin/_sidebar.html' %}
+
+    <div class="flex-1 p-6 lg:p-8 ml-0 lg:ml-64">
+      <div class="max-w-7xl mx-auto">
+
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-extrabold text-[var(--text-primary)]">Transactions</h1>
+            <p class="text-sm text-[var(--text-secondary)] mt-1">Full escrow transaction ledger</p>
+          </div>
+        </div>
+
+        <!-- Search -->
+        <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl p-4 mb-6">
+          <form method="GET" class="flex gap-3">
+            <div class="relative flex-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" name="search" value="{{ search or '' }}" placeholder="Search by reference, buyer name, email..." class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)] focus:ring-1 focus:ring-purple-500 focus:border-purple-500">
+            </div>
+            <button type="submit" class="px-4 py-2.5 bg-purple-600 text-white text-sm font-bold rounded-lg hover:bg-purple-700 transition">Search</button>
+            {% if search %}<a href="{{ url_for('admin.transactions_list') }}" class="px-4 py-2.5 border border-[var(--color-border)] text-sm font-bold rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition">Clear</a>{% endif %}
+          </form>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl overflow-hidden">
+          <div class="overflow-x-auto max-h-[600px] overflow-y-auto" style="scrollbar-width: thin;">
+            <table class="w-full text-left">
+              <thead>
+                <tr class="border-b border-[var(--color-border)] bg-[var(--bg-tertiary)]">
+                  <th class="p-4 pl-6 text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">ID & Reference</th>
+                  <th class="p-4 text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Buyer</th>
+                  <th class="p-4 text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Seller</th>
+                  <th class="p-4 text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Amount</th>
+                  <th class="p-4 text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Fee</th>
+                  <th class="p-4 text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Status</th>
+                  <th class="p-4 pr-6 text-right text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">Dates</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--color-border)]">
+                {% if transactions %}
+                  {% for txn in transactions %}
+                  <tr class="hover:bg-[var(--bg-primary)]/40 transition">
+                    <td class="p-4 pl-6">
+                      <p class="font-bold text-sm text-[var(--text-primary)]">#{{ txn.id }}</p>
+                      <p class="text-xs text-[var(--text-secondary)] font-mono break-all max-w-[140px]">{{ txn.paystack_reference or 'No ref' }}</p>
+                      {% if txn.listing %}
+                      <span class="inline-block mt-1 px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-bold rounded">Shop</span>
+                      {% elif txn.gig %}
+                      <span class="inline-block mt-1 px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-bold rounded">Gig</span>
+                      {% endif %}
+                    </td>
+                    <td class="p-4">
+                      {% if txn.buyer %}
+                      <a href="{{ url_for('admin.user_detail', user_id=txn.buyer.id) }}" class="font-bold text-sm text-[var(--text-primary)] hover:underline">{{ txn.buyer.full_name }}</a>
+                      <p class="text-xs text-[var(--text-secondary)] font-mono">{{ txn.buyer.phone }}</p>
+                      {% else %}
+                      <span class="text-xs text-red-500">Unknown</span>
+                      {% endif %}
+                    </td>
+                    <td class="p-4">
+                      {% if txn.seller %}
+                      <a href="{{ url_for('admin.user_detail', user_id=txn.seller.id) }}" class="font-bold text-sm text-[var(--text-primary)] hover:underline">{{ txn.seller.full_name }}</a>
+                      <p class="text-xs text-[var(--text-secondary)] font-mono">{{ txn.seller.phone }}</p>
+                      {% else %}
+                      <span class="text-xs text-red-500">Unknown</span>
+                      {% endif %}
+                    </td>
+                    <td class="p-4 font-mono font-bold text-sm text-[var(--text-primary)]">
+                      GHS {{ "{:,.2f}".format(txn.amount) }}
+                    </td>
+                    <td class="p-4 font-mono font-bold text-xs text-purple-500">
+                      GHS {{ "{:,.2f}".format(txn.platform_fee) }}
+                    </td>
+                    <td class="p-4">
+                      {% if txn.status.name == 'released' %}
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-500/10 text-green-500 text-xs font-bold rounded">
+                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Released
+                      </span>
+                      {% elif txn.status.name == 'disputed' %}
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-red-500/10 text-red-500 text-xs font-bold rounded">
+                        <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span> Disputed
+                      </span>
+                      {% elif txn.status.name == 'refunded' %}
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-500/10 text-orange-500 text-xs font-bold rounded">
+                        <span class="w-1.5 h-1.5 bg-orange-500 rounded-full"></span> Refunded
+                      </span>
+                      {% elif txn.status.name == 'held_in_escrow' %}
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-500/10 text-yellow-500 text-xs font-bold rounded">
+                        <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span> Escrow
+                      </span>
+                      {% else %}
+                      <span class="px-2 py-0.5 bg-gray-500/10 text-gray-400 text-xs font-bold rounded">{{ txn.status.name }}</span>
+                      {% endif %}
+                    </td>
+                    <td class="p-4 pr-6 text-right text-xs text-[var(--text-secondary)] font-mono">
+                      <p>{{ txn.created_at.strftime('%d %b %Y') }}</p>
+                      <p class="text-[10px]">{{ txn.created_at.strftime('%H:%M') }}</p>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="7" class="p-12 text-center text-sm text-[var(--text-secondary)] italic">No transactions found</td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+
+          {% if pagination and pagination.pages > 1 %}
+          <div class="flex items-center justify-between p-4 border-t border-[var(--color-border)] bg-[var(--bg-tertiary)]">
+            <span class="text-xs text-[var(--text-secondary)]">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+            <div class="flex gap-2">
+              {% if pagination.has_prev %}
+              <a href="{{ url_for('admin.transactions_list', page=pagination.prev_num, search=search) }}" class="px-3 py-1.5 border border-[var(--color-border)] rounded-lg text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--bg-primary)] transition">Previous</a>
+              {% endif %}
+              {% if pagination.has_next %}
+              <a href="{{ url_for('admin.transactions_list', page=pagination.next_num, search=search) }}" class="px-3 py-1.5 border border-[var(--color-border)] rounded-lg text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--bg-primary)] transition">Next</a>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f4f4; margin: 0; padding: 24px;">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+    <table style="max-width: 600px; width: 100%; background: #ffffff; border-radius: 12px; overflow: hidden;">
+      <tr><td style="background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 32px; text-align: center;">
+        <h1 style="margin: 0; color: #fff; font-size: 22px;">Discover on Campus Plug</h1>
+        <p style="margin: 8px 0 0; color: rgba(255,255,255,0.85); font-size: 14px;">Hand-picked recommendations for you</p>
+      </td></tr>
+      <tr><td style="padding: 24px 32px;">
+        <p style="margin: 0 0 16px; font-size: 15px; color: #374151;">Hi {{ user.full_name }},</p>
+        <p style="margin: 0 0 24px; font-size: 14px; color: #6b7280;">We found some listings and gigs we think you'll love.</p>
+
+        {% if listing %}
+        <div style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+          <h3 style="margin: 0 0 4px; font-size: 16px; color: #111827;">
+            <a href="{{ listing.url }}" style="color: #6366f1; text-decoration: none;">{{ listing.title }}</a>
+          </h3>
+          <p style="margin: 0 0 8px; font-size: 13px; color: #6b7280;">{{ listing.description[:120] }}{% if listing.description|length > 120 %}...{% endif %}</p>
+          <span style="font-size: 15px; font-weight: 600; color: #059669;">GHS {{ listing.price }}</span>
+        </div>
+        {% endif %}
+
+        {% if gig %}
+        <div style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+          <h3 style="margin: 0 0 4px; font-size: 16px; color: #111827;">
+            <a href="{{ gig.url }}" style="color: #6366f1; text-decoration: none;">{{ gig.title }}</a>
+          </h3>
+          <p style="margin: 0 0 8px; font-size: 13px; color: #6b7280;">{{ gig.description[:120] }}{% if gig.description|length > 120 %}...{% endif %}</p>
+          <span style="font-size: 15px; font-weight: 600; color: #059669;">GHS {{ gig.budget }}</span>
+        </div>
+        {% endif %}
+
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td align="center">
+            <a href="{{ browse_url }}" style="display: inline-block; padding: 12px 32px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500;">Browse More</a>
+          </td></tr>
+        </table>
+
+        <p style="margin: 24px 0 0; font-size: 12px; color: #9ca3af; text-align: center;">
+          You're receiving this because you have a Campus Plug account.<br>
+          Adjust preferences in your <a href="{{ settings_url }}" style="color: #6366f1;">Profile Settings</a>.
+        </p>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>
