@@ -36,8 +36,8 @@ def create_app():
     else:
         app.config.from_object(DevelopmentConfig)
 
-    # Warn about missing production config
-    config_errors = Config.validate()
+    # Validate config — abort in production if critical vars missing
+    config_errors = Config.validate(production=not app.debug)
     for err in config_errors:
         app.logger.warning(f"Config: {err}")
 
@@ -210,6 +210,10 @@ def create_app():
         return render_template('leaderboard.html', leaderboard=leaderboard_data)
 
     # Error Handlers
+    @app.errorhandler(400)
+    def bad_request_error(e):
+        return render_template('errors/400.html', error=str(e)), 400
+
     @app.errorhandler(403)
     def forbidden_error(e):
         return render_template('errors/403.html'), 403
@@ -217,6 +221,11 @@ def create_app():
     @app.errorhandler(404)
     def page_not_found(e):
         return render_template('errors/404.html'), 404
+
+    @app.errorhandler(413)
+    def payload_too_large(e):
+        flash('File too large. Maximum size is 20 MB.', 'danger')
+        return redirect(request.referrer or url_for('index'))
 
     @app.errorhandler(500)
     def internal_server_error(e):
@@ -243,7 +252,8 @@ def create_app():
             if HAS_MIGRATE and upgrade:
                 try:
                     upgrade()
-                except Exception:
+                except Exception as exc:
+                    app.logger.error("Migration failed, falling back to create_all: %s", exc)
                     db.create_all()
             else:
                 db.create_all()

@@ -6,9 +6,9 @@
   <title>{% block title %}Campus Plug - Ghana Student Marketplace{% endblock %}</title>
   
   <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="url_for('static', filename='favicon.ico')">
-  <link rel="shortcut icon" href="url_for('static', filename='favicon.ico')" type="image/x-icon">
-  <link rel="apple-touch-icon" href="url_for('static', filename='images/logo.png')">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>

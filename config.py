@@ -2,7 +2,7 @@ import os
 import re
 
 def _load_env():
-    paths = ['.env', '.env.example']
+    paths = ['.env']
     for p in paths:
         if os.path.exists(p):
             with open(p, 'r', encoding='utf-8') as f:
@@ -40,12 +40,19 @@ class Config:
     SESSION_COOKIE_SAMESITE = 'Lax'
 
     @staticmethod
-    def validate():
+    def validate(production=False):
         errors = []
         if not Config.SECRET_KEY or Config.SECRET_KEY == 'change-me-in-production':
             errors.append('SECRET_KEY is not set. Generate one: python3 -c "import secrets; print(secrets.token_hex(32))"')
         if not Config.PAYSTACK_SECRET_KEY or not Config.PAYSTACK_PUBLIC_KEY:
             errors.append('PAYSTACK_SECRET_KEY and PAYSTACK_PUBLIC_KEY must be set in .env')
+        if production:
+            import sys
+            if errors:
+                print("CRITICAL CONFIGURATION ERRORS:", file=sys.stderr)
+                for err in errors:
+                    print(f"  - {err}", file=sys.stderr)
+                sys.exit(1)
         return errors
 
 
@@ -58,7 +65,7 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', '').replace('postgres://', 'postgresql://', 1)
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', '').replace('postgres://', 'postgresql://', 1) if os.environ.get('DATABASE_URL') else ''
     SESSION_COOKIE_SECURE = True
     WTF_CSRF_ENABLED = True
 

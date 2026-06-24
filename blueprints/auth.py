@@ -6,6 +6,7 @@ import time
 from io import BytesIO
 from datetime import datetime, timedelta
 from sqlalchemy.exc import IntegrityError
+from markupsafe import escape
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User, Listing, Gig, Notification, UNIVERSITIES, MOMO_PROVIDERS, generate_referral_code
@@ -408,7 +409,8 @@ def settings():
             current_user.bio = bio
             current_user.latitude = latitude
             current_user.longitude = longitude
-            current_user.location_name = location_name or None
+            from markupsafe import escape
+            current_user.location_name = escape(location_name) if location_name else None
 
             avatar_file = request.files.get('avatar')
             if avatar_file and avatar_file.filename:
@@ -423,6 +425,9 @@ def settings():
                         errors['avatar'] = 'Avatar must be less than 5 MB'
                     else:
                         try:
+                            from PIL import Image
+                            # Decompression bomb protection
+                            Image.MAX_IMAGE_PIXELS = 50_000_000
                             img = Image.open(avatar_file)
                             img.verify()
                             avatar_file.seek(0)

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Bad Request (400) - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-md mx-auto w-full px-6 py-24 relative z-10 text-center flex flex-col items-center">
+
+  <div class="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center text-amber-500 mb-6 border border-amber-500/20 shadow-lg select-none">
+    <i data-lucide="triangle-alert" class="w-10 h-10"></i>
+  </div>
+
+  <h1 class="font-display font-extrabold text-3xl text-[var(--text-primary)] mb-2">Bad Request (400)</h1>
+  <p class="font-sans text-xs text-[var(--text-secondary)] leading-relaxed max-w-sm mb-2">
+    The request could not be processed. This usually happens when a form is submitted twice or with invalid data.
+  </p>
+  {% if error %}
+  <p class="font-mono text-[10px] text-[var(--text-secondary)] opacity-60 mb-8 break-all">{{ error }}</p>
+  {% endif %}
+
+  <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
+    <a href="{{ url_for('index') }}" class="w-full text-center py-3 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs shadow-md btn-lift">
+      Back to Landing Page
+    </a>
+  </div>
+
+</section>
+{% endblock %}
