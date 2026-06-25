@@ -242,6 +242,18 @@ def create_app():
     def health():
         try:
             db.session.execute(db.text('SELECT 1'))
+            # Auto-release expired escrow (runs at most every 15 min)
+            import tempfile, os as _os
+            _lock = _os.path.join(tempfile.gettempdir(), 'campus_plug_autorelease')
+            _now = __import__('time').time()
+            _last = float(_os.popen(f'cat {_lock} 2>/dev/null || echo 0').read().strip() or 0)
+            if _now - _last > 900:
+                _os.system(f'echo {_now} > {_lock}')
+                try:
+                    from blueprints.payments import auto_release_expired_transactions
+                    auto_release_expired_transactions()
+                except Exception as ae:
+                    app.logger.error(f"Auto-release: {ae}")
             return jsonify({'status': 'healthy', 'database': 'ok'})
         except Exception as e:
             return jsonify({'status': 'unhealthy', 'database': str(e)}), 500

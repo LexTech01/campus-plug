@@ -439,7 +439,7 @@ def settings():
                     filename = f"avatar_{current_user.id}_{int(time.time())}_{filename}"
                     file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
                     avatar_file.save(file_path)
-                    current_user.avatar = f"/static/uploads/{filename}?v={int(time.time())}"
+                    current_user.avatar = f"/static/uploads/{filename}"
 
             if not errors:
                 db.session.commit()

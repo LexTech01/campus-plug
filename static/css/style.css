@@ -851,10 +851,31 @@ html.dark .card-hover-lift:hover {
   .uni-badge { opacity: 0.3; }
 }
 
-/* Tablet: admin table labels */
+/* Admin table responsiveness */
+.admin-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 767px) {
+  .admin-table-wrap table th,
+  .admin-table-wrap table td {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    white-space: nowrap;
+  }
+  .admin-table-wrap table td {
+    font-size: 13px !important;
+  }
+  .admin-table-wrap table td .text-sm {
+    font-size: 12px !important;
+  }
+  .admin-table-wrap table td input.w-32 {
+    width: 100% !important;
+  }
+}
 @media (min-width: 768px) {
-  .admin-table th { font-size: 10px !important; }
-  .admin-table td { font-size: 13px !important; }
+  .admin-table-wrap table th { font-size: 10px !important; }
+  .admin-table-wrap table td { font-size: 13px !important; }
   .admin-badge { font-size: 11px !important; }
   .admin-mono { font-size: 12px !important; }
   .admin-meta { font-size: 11px !important; }

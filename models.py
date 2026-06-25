@@ -119,15 +119,15 @@ class User(db.Model, UserMixin):
     @property
     def avatar_url(self):
         if self.avatar:
-            if '?' not in self.avatar:
-                try:
-                    import os
-                    path = self.avatar.lstrip('/')
-                    full = os.path.join(os.getcwd(), path)
-                    mtime = int(os.path.getmtime(full)) if os.path.exists(full) else 0
-                    return f"{self.avatar}?v={mtime}"
-                except Exception:
-                    pass
+            if self.avatar.startswith(('http://', 'https://')):
+                return self.avatar
+            try:
+                path = self.avatar.lstrip('/')
+                full = os.path.join(os.getcwd(), path)
+                mtime = int(os.path.getmtime(full)) if os.path.exists(full) else 0
+                return f"{self.avatar}?v={mtime}"
+            except Exception:
+                pass
             return self.avatar
         return None
 
@@ -324,6 +324,7 @@ class Transaction(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     paid_at = db.Column(db.DateTime, nullable=True)
     released_at = db.Column(db.DateTime, nullable=True)
+    auto_release_at = db.Column(db.DateTime, nullable=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships

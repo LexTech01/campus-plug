@@ -6,7 +6,7 @@ import time
 import urllib.request
 import urllib.error
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import text, update as sa_update
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, jsonify
 from flask_login import login_required, current_user
@@ -167,6 +167,7 @@ def process_successful_payment(reference, session):
     # Standard transaction status lock
     txn.transition_to(TransactionStatus.held_in_escrow, session)
     txn.paid_at = datetime.utcnow()
+    txn.auto_release_at = datetime.utcnow() + timedelta(days=7)
     
     if txn.context_type == 'listing':
         if txn.bulk_items:
@@ -765,6 +766,91 @@ def credit_referral_reward(txn, session):
             session.add(notif)
     except Exception as e:
         current_app.logger.error(f"Error crediting referral reward: {e}")
+
+
+AUTO_RELEASE_DAYS = 7
+
+
+def auto_release_expired_transactions():
+    """
+    Auto-release escrow funds for transactions past their auto_release_at date.
+    Called periodically from /health endpoint.
+    """
+    from models import Transaction, TransactionLog, Notification, User, TransactionStatus
+    from sqlalchemy import update as sa_update
+
+    now = datetime.utcnow()
+    expired = Transaction.query.filter(
+        Transaction.status == TransactionStatus.held_in_escrow,
+        Transaction.auto_release_at.isnot(None),
+        Transaction.auto_release_at <= now
+    ).all()
+
+    for txn in expired:
+        vendor = User.query.get(txn.seller_id)
+        if not vendor or not vendor.phone or not vendor.momo_provider:
+            current_app.logger.warning(f"Auto-release skipped for txn {txn.id}: seller missing MoMo details")
+            continue
+
+        try:
+            recipient_code = create_paystack_transfer_recipient(
+                name=vendor.full_name,
+                account_number=vendor.phone,
+                momo_provider=vendor.momo_provider
+            )
+            if not recipient_code:
+                current_app.logger.error(f"Auto-release: recipient creation failed for txn {txn.id}")
+                continue
+
+            transfer_code = initiate_paystack_transfer(
+                amount_ghs=txn.seller_payout_amount,
+                recipient_code=recipient_code,
+                reason=f"Auto-release escrow txn {txn.id}"
+            )
+            if not transfer_code:
+                current_app.logger.error(f"Auto-release: transfer failed for txn {txn.id}")
+                continue
+
+            result = db.session.execute(
+                sa_update(Transaction)
+                .where(Transaction.id == txn.id)
+                .where(Transaction.status == TransactionStatus.held_in_escrow)
+                .values(status=TransactionStatus.released, released_at=datetime.utcnow())
+            )
+            if result.rowcount == 0:
+                continue
+
+            txn.paystack_transfer_code = transfer_code
+            log = TransactionLog(
+                transaction_id=txn.id,
+                old_status=TransactionStatus.held_in_escrow.value,
+                new_status=TransactionStatus.released.value,
+                changed_at=datetime.utcnow()
+            )
+            db.session.add(log)
+
+            n = Notification(
+                user_id=txn.seller_id,
+                notification_type='bell',
+                message=f"GHS {txn.seller_payout_amount:.2f} has been auto-released to your MoMo (14-day escrow period ended).",
+                link=url_for('payments.dashboard')
+            )
+            db.session.add(n)
+            n2 = Notification(
+                user_id=txn.buyer_id,
+                notification_type='bell',
+                message=f"Escrow for transaction #{txn.id} has been auto-released to the seller (14-day period ended).",
+                link=url_for('payments.dashboard')
+            )
+            db.session.add(n2)
+            prompt_reviews_for_transaction(txn, db.session)
+            credit_referral_reward(txn, db.session)
+            db.session.commit()
+            current_app.logger.info(f"Auto-released txn {txn.id}: GHS {txn.seller_payout_amount} to seller {vendor.id}")
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Auto-release error for txn {txn.id}: {e}")
 
 
 def prompt_reviews_for_transaction(txn, session):

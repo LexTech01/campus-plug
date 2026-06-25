@@ -1,10 +1,21 @@
+<!-- Sidebar Backdrop -->
+<div id="sidebar-backdrop" onclick="toggleAdminSidebar()" class="fixed inset-0 bg-black/40 z-30 hidden lg:hidden"></div>
+
+<!-- Sidebar Toggle Button (mobile only) -->
+<button onclick="toggleAdminSidebar()" id="sidebar-toggle" class="lg:hidden fixed top-4 left-4 z-50 w-9 h-9 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] flex items-center justify-center shadow-lg hover:bg-[var(--bg-tertiary)] transition-all-smooth" aria-label="Toggle Admin Menu">
+  <i data-lucide="menu" class="w-4 h-4"></i>
+</button>
+
 <!-- Admin Sidebar -->
-<aside class="fixed top-0 left-0 z-40 w-64 h-screen bg-[var(--bg-secondary)] border-r border-[var(--color-border)] hidden lg:flex flex-col">
-  <div class="p-5 border-b border-[var(--color-border)]">
+<aside id="admin-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen bg-[var(--bg-secondary)] border-r border-[var(--color-border)] flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+  <div class="p-5 border-b border-[var(--color-border)] flex items-center justify-between">
     <a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-2">
       <span class="w-7 h-7 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-xs">CP</span>
       <span class="font-extrabold text-sm text-[var(--text-primary)]">Admin Panel</span>
     </a>
+    <button onclick="toggleAdminSidebar()" class="lg:hidden p-1 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-all-smooth" aria-label="Close">
+      <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
   </div>
 
   <nav class="flex-1 p-3 overflow-y-auto">
@@ -41,19 +52,27 @@
   </nav>
 
   <div class="p-3 border-t border-[var(--color-border)]">
-    <a href="{{ url_for('index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-all-smooth">
+    <a href="{{ url_for('index') }}" onclick="if(window.innerWidth<1024)toggleAdminSidebar()" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-all-smooth">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9v3"/><path d="M18 15h.01"/><path d="M5 20V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4"/><path d="M5 20H3"/><path d="M3 20h14a2 2 0 0 0 2-2v-2"/><path d="M5 8h6"/><path d="M5 12h6"/><path d="M5 16h6"/></svg>
       Back to Site
     </a>
   </div>
 </aside>
 
-<!-- Mobile Admin Nav -->
-<div class="lg:hidden flex items-center gap-2 overflow-x-auto pb-2 mb-6">
-  <a href="{{ url_for('admin.dashboard') }}" class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap {% if request.endpoint == 'admin.dashboard' %}bg-purple-500/20 text-purple-400{% else %}bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--color-border)]{% endif %}">Overview</a>
-  <a href="{{ url_for('admin.users_list') }}" class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap {% if request.endpoint in ('admin.users_list', 'admin.user_detail') %}bg-purple-500/20 text-purple-400{% else %}bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--color-border)]{% endif %}">Users</a>
-  <a href="{{ url_for('admin.listings_list') }}" class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap {% if request.endpoint == 'admin.listings_list' %}bg-purple-500/20 text-purple-400{% else %}bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--color-border)]{% endif %}">Listings</a>
-  <a href="{{ url_for('admin.gigs_list') }}" class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap {% if request.endpoint == 'admin.gigs_list' %}bg-purple-500/20 text-purple-400{% else %}bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--color-border)]{% endif %}">Gigs</a>
-  <a href="{{ url_for('admin.disputes_list') }}" class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap {% if request.endpoint == 'admin.disputes_list' %}bg-purple-500/20 text-purple-400{% else %}bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--color-border)]{% endif %}">Disputes{% if metrics is defined and metrics.disputed_count > 0 %} <span class="text-red-400">({{ metrics.disputed_count }}){% endif %}</span></a>
-  <a href="{{ url_for('admin.transactions_list') }}" class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap {% if request.endpoint == 'admin.transactions_list' %}bg-purple-500/20 text-purple-400{% else %}bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--color-border)]{% endif %}">Transactions</a>
-</div>
+<script>
+function toggleAdminSidebar() {
+  const sidebar = document.getElementById('admin-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  const toggle = document.getElementById('sidebar-toggle');
+  sidebar.classList.toggle('translate-x-0');
+  sidebar.classList.toggle('-translate-x-full');
+  backdrop.classList.toggle('hidden');
+  if (toggle) {
+    const icon = toggle.querySelector('i');
+    if (icon) {
+      icon.setAttribute('data-lucide', sidebar.classList.contains('translate-x-0') ? 'x' : 'menu');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+  }
+}
+</script>

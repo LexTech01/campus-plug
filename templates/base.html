@@ -122,6 +122,10 @@
           <span class="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-amber-400 group-hover:w-full transition-all duration-300"></span>
         </a>
         {% if current_user.is_authenticated %}
+        <a href="{% if current_user.account_type == 'regular' %}{{ url_for('auth.upgrade_seller') }}{% else %}{{ url_for('marketplace.my_listings') }}{% endif %}" class="font-sans font-semibold text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all-smooth relative group">
+          Seller
+          <span class="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-amber-400 group-hover:w-full transition-all duration-300"></span>
+        </a>
         <a href="{{ url_for('leaderboard') }}" class="font-sans font-semibold text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all-smooth relative group" title="Leaderboard">
           <i data-lucide="trophy" class="w-3.5 h-3.5 inline text-amber-400"></i>
           <span class="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-gradient-to-r from-amber-400 to-purple-500 group-hover:w-full transition-all duration-300"></span>
@@ -276,6 +280,15 @@
           </a>
           <a href="{{ url_for('payments.dashboard') }}" class="p-1.5 sm:p-2 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)]" aria-label="Escrow">
             <i data-lucide="wallet" class="w-4 sm:w-5 h-4 sm:h-5"></i>
+          </a>
+          <a href="{{ url_for('freelance.showcases_list') }}" class="p-1.5 sm:p-2 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-all-smooth" aria-label="Showcases">
+            <i data-lucide="sparkles" class="w-4 sm:w-5 h-4 sm:h-5"></i>
+          </a>
+          <a href="{{ url_for('map.sellers_map') }}" class="p-1.5 sm:p-2 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-all-smooth" aria-label="Sellers Map">
+            <i data-lucide="map" class="w-4 sm:w-5 h-4 sm:h-5"></i>
+          </a>
+          <a href="{% if current_user.account_type == 'regular' %}{{ url_for('auth.upgrade_seller') }}{% else %}{{ url_for('marketplace.my_listings') }}{% endif %}" class="p-1.5 sm:p-2 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-all-smooth" aria-label="Seller">
+            <i data-lucide="store" class="w-4 sm:w-5 h-4 sm:h-5"></i>
           </a>
         {% else %}
           <a href="{{ url_for('auth.register') }}" class="px-4 py-2 rounded-full bg-[var(--color-brand)] text-white font-sans font-bold text-[10px] btn-lift whitespace-nowrap">Sign Up</a>

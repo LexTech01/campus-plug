@@ -7,7 +7,7 @@
   <div class="flex">
     {% include 'admin/_sidebar.html' %}
 
-    <div class="flex-1 p-6 lg:p-8 ml-0 lg:ml-64">
+    <div class="flex-1 p-4 pt-14 sm:p-6 lg:p-8 ml-0 lg:ml-64">
       <div class="max-w-7xl mx-auto">
 
         <div class="flex items-center justify-between mb-6">
@@ -19,19 +19,19 @@
 
         <!-- Search -->
         <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl p-4 mb-6">
-          <form method="GET" class="flex gap-3">
-            <div class="relative flex-1">
+          <form method="GET" class="flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1 min-w-0">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input type="text" name="search" value="{{ search or '' }}" placeholder="Search by title, description..." class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)] focus:ring-1 focus:ring-purple-500 focus:border-purple-500">
             </div>
-            <button type="submit" class="px-4 py-2.5 bg-purple-600 text-white text-sm font-bold rounded-lg hover:bg-purple-700 transition">Search</button>
-            {% if search %}<a href="{{ url_for('admin.listings_list') }}" class="px-4 py-2.5 border border-[var(--color-border)] text-sm font-bold rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition">Clear</a>{% endif %}
+            <button type="submit" class="w-full sm:w-auto px-4 py-2.5 bg-purple-600 text-white text-sm font-bold rounded-lg hover:bg-purple-700 transition">Search</button>
+            {% if search %}<a href="{{ url_for('admin.listings_list') }}" class="w-full sm:w-auto px-4 py-2.5 border border-[var(--color-border)] text-sm font-bold rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition text-center">Clear</a>{% endif %}
           </form>
         </div>
 
         <!-- Table -->
         <div class="bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-xl overflow-hidden">
-          <div class="overflow-x-auto max-h-[600px] overflow-y-auto" style="scrollbar-width: thin;">
+          <div class="admin-table-wrap overflow-x-auto max-h-[600px] overflow-y-auto" style="scrollbar-width: thin;">
             <table class="w-full text-left">
               <thead>
                 <tr class="border-b border-[var(--color-border)] bg-[var(--bg-tertiary)]">
@@ -87,10 +87,10 @@
                       </div>
                     </td>
                     <td class="p-4 pr-6 text-right">
-                      <form action="{{ url_for('admin.toggle_remove_listing', listing_id=listing.id) }}" method="POST" class="flex items-center justify-end gap-2">
+                      <form action="{{ url_for('admin.toggle_remove_listing', listing_id=listing.id) }}" method="POST" class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-1.5">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <input type="text" name="note" required placeholder="Reason..." class="w-32 p-1.5 px-2 rounded-lg border border-[var(--color-border)] bg-[var(--bg-primary)] text-xs text-[var(--text-primary)]">
-                        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-bold {% if listing.removed_by_admin %}bg-green-600 text-white hover:bg-green-700{% else %}bg-red-600 text-white hover:bg-red-700{% endif %} transition">
+                        <input type="text" name="note" required placeholder="Reason..." class="w-full sm:w-32 p-1.5 px-2 rounded-lg border border-[var(--color-border)] bg-[var(--bg-primary)] text-xs text-[var(--text-primary)]">
+                        <button type="submit" class="w-full sm:w-auto px-3 py-1.5 rounded-lg text-xs font-bold {% if listing.removed_by_admin %}bg-green-600 text-white hover:bg-green-700{% else %}bg-red-600 text-white hover:bg-red-700{% endif %} transition">
                           {% if listing.removed_by_admin %}Restore{% else %}Remove{% endif %}
                         </button>
                       </form>
