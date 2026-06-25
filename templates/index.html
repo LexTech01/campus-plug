@@ -3,51 +3,75 @@
 {% block title %}Campus Plug - Ghana's Gen-Z Student Marketplace & Gigs Platform{% endblock %}
 
 {% block content %}
-<!-- Immersive Hero Section -->
-<section class="relative min-h-[80vh] sm:min-h-[85vh] flex items-center justify-center px-4 sm:px-6 overflow-hidden">
-  <div class="absolute inset-0 bg-gradient-to-tr from-purple-900/10 via-transparent to-amber-500/5 dark:from-purple-950/20 dark:to-amber-500/10 z-0"></div>
-  
-  <!-- Fancy grid background overlay -->
-  <div class="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:32px_32px] dark:bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] z-0"></div>
+<!-- Hero Section -->
+<section class="relative min-h-[90vh] sm:min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden">
+  <!-- Deep dark background -->
+  <div class="absolute inset-0 bg-[var(--bg-primary)] z-0"></div>
 
-  <!-- Floating University Badges -->
-  <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-    <div class="uni-badge" style="top:12%;left:5%;animation-delay:0s;animation-duration:22s;background:rgba(99,102,241,0.08);backdrop-filter:blur(6px);">KNUST</div>
-    <div class="uni-badge" style="top:25%;right:8%;animation-delay:2s;animation-duration:18s;background:rgba(168,85,247,0.06);backdrop-filter:blur(8px);">UG</div>
-    <div class="uni-badge" style="top:55%;left:3%;animation-delay:4s;animation-duration:25s;background:rgba(52,211,153,0.06);backdrop-filter:blur(6px);">UCC</div>
-    <div class="uni-badge" style="top:10%;left:40%;animation-delay:1s;animation-duration:20s;background:rgba(251,191,36,0.06);backdrop-filter:blur(8px);">ASHESI</div>
-    <div class="uni-badge" style="top:60%;right:12%;animation-delay:3s;animation-duration:24s;background:rgba(244,114,182,0.06);backdrop-filter:blur(6px);">UDS</div>
-    <div class="uni-badge" style="top:35%;left:60%;animation-delay:5s;animation-duration:19s;background:rgba(99,102,241,0.06);backdrop-filter:blur(8px);">UPSA</div>
-    <div class="uni-badge" style="top:70%;left:30%;animation-delay:2.5s;animation-duration:21s;background:rgba(249,115,22,0.06);backdrop-filter:blur(6px);">UEW</div>
-    <div class="uni-badge" style="top:5%;left:75%;animation-delay:4.5s;animation-duration:23s;background:rgba(34,211,238,0.06);backdrop-filter:blur(8px);">GIMPA</div>
-    <div class="uni-badge" style="top:75%;right:35%;animation-delay:1.5s;animation-duration:17s;background:rgba(168,85,247,0.06);backdrop-filter:blur(6px);">TTU</div>
-  </div>
+  <!-- Subtle radial glow -->
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_70%_50%,rgba(168,85,247,0.06),transparent)] z-0"></div>
 
-  <div class="max-w-5xl mx-auto text-center relative z-10 py-16 sm:py-12">
-    <!-- Campus Trust Tag -->
-    <div data-aos="fade-up" data-aos-delay="100" class="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] shadow-md mb-6 sm:mb-8 hover:scale-105 transition-all-smooth cursor-default">
-      <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[var(--color-accent)] animate-pulse"></span>
-      <span class="font-mono text-[8px] sm:text-[10px] uppercase font-bold tracking-wider text-[var(--text-secondary)]">Live Across 10 Ghanaian Universities</span>
+  <!-- Grid overlay -->
+  <div class="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px] z-0"></div>
+
+  <div class="max-w-7xl mx-auto w-full px-6 relative z-10 flex items-center justify-center py-28 sm:py-32 lg:py-40">
+
+    <!-- Background Visual (positioned behind text) -->
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <!-- Outer glow ring -->
+      <div class="absolute w-[340px] h-[340px] sm:w-[480px] sm:h-[480px] lg:w-[600px] lg:h-[600px] rounded-full border border-white/[0.03]"></div>
+
+      <!-- Main gradient circle -->
+      <div class="absolute w-[300px] h-[300px] sm:w-[420px] sm:h-[420px] lg:w-[540px] lg:h-[540px] rounded-full bg-gradient-to-br from-purple-500/8 via-pink-500/5 to-amber-500/3 shadow-[0_0_160px_rgba(168,85,247,0.06)]"></div>
+
+      <!-- Inner accent ring -->
+      <div class="absolute w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] lg:w-[380px] lg:h-[380px] rounded-full border border-purple-500/[0.04]"></div>
+
+      <!-- Floating University Badges -->
+      <div class="absolute inset-0">
+        <div class="uni-badge" style="top:12%;left:18%;background:rgba(99,102,241,0.12);backdrop-filter:blur(6px);">KNUST</div>
+        <div class="uni-badge" style="top:22%;right:14%;--delay:2s;background:rgba(168,85,247,0.10);backdrop-filter:blur(8px);">UG</div>
+        <div class="uni-badge hidden sm:block" style="top:55%;left:12%;--delay:4s;background:rgba(52,211,153,0.10);backdrop-filter:blur(6px);">UCC</div>
+        <div class="uni-badge" style="top:15%;right:30%;--delay:1s;background:rgba(251,191,36,0.10);backdrop-filter:blur(8px);">ASHESI</div>
+        <div class="uni-badge hidden sm:block" style="top:65%;right:15%;--delay:3s;background:rgba(244,114,182,0.10);backdrop-filter:blur(6px);">UDS</div>
+        <div class="uni-badge" style="top:75%;left:22%;--delay:2.5s;background:rgba(249,115,22,0.10);backdrop-filter:blur(6px);">UEW</div>
+        <div class="uni-badge hidden md:block" style="top:38%;left:28%;--delay:5s;background:rgba(99,102,241,0.08);backdrop-filter:blur(8px);">UPSA</div>
+        <div class="uni-badge hidden lg:block" style="top:8%;left:42%;--delay:4.5s;background:rgba(34,211,238,0.08);backdrop-filter:blur(8px);">GIMPA</div>
+        <div class="uni-badge hidden lg:block" style="top:80%;right:25%;--delay:1.5s;background:rgba(168,85,247,0.08);backdrop-filter:blur(6px);">TTU</div>
+      </div>
+
+
     </div>
 
-    <!-- Main Bold Headline -->
-    <h1 data-aos="fade-up" data-aos-delay="200" class="font-display font-extrabold text-[1.75rem] sm:text-5xl md:text-6xl tracking-tight leading-[1.15] mb-4 sm:mb-6 text-[var(--text-primary)] px-2 sm:px-0">
-      The Ultimate Campus Hub for <br class="hidden sm:inline">
-      <span class="bg-gradient-to-r from-purple-500 via-pink-500 to-amber-500 bg-clip-text text-transparent">Buying, Selling, & Hustling</span>
-    </h1>
+    <!-- Centered Text Content (above background visual) -->
+    <div class="relative z-10 text-center max-w-2xl mx-auto">
+      <!-- Trust Tag -->
+      <div data-aos="fade-up" data-aos-delay="100" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] shadow-md mb-8 sm:mb-10 hover:scale-105 transition-all-smooth cursor-default">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="font-mono text-[8px] sm:text-[10px] uppercase font-bold tracking-wider text-[var(--text-secondary)]">Live Across 10 Ghanaian Universities</span>
+      </div>
 
-    <p data-aos="fade-up" data-aos-delay="300" class="max-w-2xl mx-auto font-sans text-sm sm:text-lg text-[var(--text-secondary)] leading-relaxed mb-10 sm:mb-14 px-2 sm:px-0">
-      Trade textbooks, electronics, fashion, and more peer-to-peer, or find flexible gigs like tutoring and delivery. Built for students and businesses in Ghana with secure MoMo escrow.
-    </p>
+      <!-- Headline -->
+      <h1 data-aos="fade-up" data-aos-delay="200" class="font-display font-extrabold text-[2rem] sm:text-5xl md:text-6xl lg:text-[4rem] tracking-tight leading-[1.05] mb-6 sm:mb-8 text-[var(--text-primary)]">
+        Buy, Sell &amp;
+        <span class="bg-gradient-to-r from-emerald-400 via-purple-400 to-amber-400 bg-clip-text text-transparent">Hustle</span> on<br class="hidden sm:block"> Campus
+      </h1>
 
-    <!-- CTAs with tactile lift -->
-    <div data-aos="fade-up" data-aos-delay="400" class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-      <a href="{{ url_for('marketplace.browse') }}" class="w-fit px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs sm:text-sm shadow-xl btn-lift btn-glow flex items-center justify-center gap-2">
-        <i data-lucide="tag" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i> Explore Marketplace
-      </a>
-      <a href="{{ url_for('freelance.browse') }}" class="w-fit px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-[var(--bg-secondary)] text-[var(--text-primary)] font-sans font-bold text-xs sm:text-sm border border-[var(--color-border)] shadow-lg hover:bg-[var(--bg-tertiary)] hover:scale-105 transition-all-smooth flex items-center justify-center gap-2">
-        <i data-lucide="briefcase" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i> Browse Gigs & Bids
-      </a>
+      <p data-aos="fade-up" data-aos-delay="300" class="max-w-lg mx-auto font-sans text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed mb-10 sm:mb-12">
+        Trade textbooks, electronics, and fashion peer-to-peer. Find gigs like tutoring and delivery. All secured with MoMo escrow.
+      </p>
+
+      <!-- CTAs -->
+      <div data-aos="fade-up" data-aos-delay="400" class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12 sm:mb-16">
+        <a href="{{ url_for('marketplace.browse') }}" class="w-full sm:w-fit px-8 py-3.5 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-sm shadow-xl btn-lift btn-glow flex items-center justify-center gap-2">
+          <i data-lucide="tag" class="w-4 h-4"></i> Marketplace
+        </a>
+        <a href="{{ url_for('freelance.browse') }}" class="w-full sm:w-fit px-8 py-3.5 rounded-xl bg-transparent text-emerald-400 font-sans font-bold text-sm border border-emerald-500/20 hover:bg-emerald-500/5 hover:scale-105 transition-all-smooth flex items-center justify-center gap-2">
+          <i data-lucide="play" class="w-4 h-4"></i> Explore Gigs
+        </a>
+      </div>
+
+
     </div>
   </div>
 </section>

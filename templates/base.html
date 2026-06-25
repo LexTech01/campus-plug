@@ -26,7 +26,7 @@
       }
     }
   </script>
-  
+
   <!-- Custom design token variables and micro-interactions -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   
@@ -92,7 +92,7 @@
 
   <!-- Navigation Bar -->
   {% if not request.endpoint or not request.endpoint.startswith('admin.') %}
-  <header id="main-header" class="fixed top-0 left-0 w-full z-40 py-5 transition-all duration-300 bg-transparent flex items-center" style="top: env(safe-area-inset-top, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);">
+  <header id="main-header" class="fixed top-0 left-0 w-full z-40 py-2.5 sm:py-5 transition-all duration-300 bg-transparent flex items-center" style="top: env(safe-area-inset-top, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);">
     <div class="max-w-7xl mx-auto w-full px-6 flex items-center justify-between">
       <!-- Logo -->
       <a href="{{ url_for('index') }}" class="flex items-center gap-2.5 z-50">
@@ -249,18 +249,40 @@
           </div>
         {% else %}
           <a href="{{ url_for('auth.login') }}" class="font-sans font-bold text-xs text-[var(--text-primary)] px-5 py-2.5 rounded-full border border-[var(--color-border)] hover:bg-[var(--bg-tertiary)] hover:scale-105 transition-all-smooth bg-[var(--bg-secondary)]">Sign In</a>
-          <a href="{{ url_for('auth.register') }}" class="font-sans font-bold text-xs text-white px-5 py-2.5 rounded-full bg-[var(--color-brand)] btn-lift btn-glow">Sign Up</a>
+          <a href="{{ url_for('auth.register') }}" class="font-sans font-bold text-xs text-white px-5 py-2.5 rounded-full bg-[var(--color-brand)] btn-lift">Sign Up</a>
         {% endif %}
       </div>
 
-      <!-- Hamburger (Mobile) -->
-      <div class="flex items-center gap-2 md:hidden">
-        {% if not current_user.is_authenticated %}
-        <a href="{{ url_for('auth.register') }}" class="px-4 py-2 rounded-full bg-[var(--color-brand)] text-white font-sans font-bold text-[10px] btn-lift btn-glow whitespace-nowrap">Sign Up</a>
+      <!-- Mobile: Auth icons + Hamburger -->
+      <div class="flex items-center gap-1 sm:gap-2 md:hidden">
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('cart.view_cart') }}" class="p-1.5 sm:p-2 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] relative" aria-label="Cart">
+            <i data-lucide="shopping-cart" class="w-4 sm:w-5 h-4 sm:h-5"></i>
+            {% if cart_count > 0 %}
+              <span class="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-amber-500 rounded-full text-white font-sans font-extrabold text-[7px] flex items-center justify-center shadow">{{ cart_count }}</span>
+            {% endif %}
+          </a>
+          <a href="{{ url_for('chat.inbox') }}" class="p-1.5 sm:p-2 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] relative" aria-label="Messages">
+            <i data-lucide="message-square" class="w-4 sm:w-5 h-4 sm:h-5"></i>
+            {% if unread_messages_count > 0 %}
+              <span class="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-purple-600 rounded-full text-white font-sans font-extrabold text-[7px] flex items-center justify-center shadow">{{ unread_messages_count }}</span>
+            {% endif %}
+          </a>
+          <a href="{{ url_for('auth.notifications') }}" class="p-1.5 sm:p-2 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] relative" aria-label="Notifications">
+            <i data-lucide="bell" class="w-4 sm:w-5 h-4 sm:h-5"></i>
+            {% if unread_notifications_count > 0 %}
+              <span class="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-amber-500 rounded-full text-white font-sans font-extrabold text-[7px] flex items-center justify-center shadow-lg animate-pulse">{{ unread_notifications_count }}</span>
+            {% endif %}
+          </a>
+          <a href="{{ url_for('payments.dashboard') }}" class="p-1.5 sm:p-2 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)]" aria-label="Escrow">
+            <i data-lucide="wallet" class="w-4 sm:w-5 h-4 sm:h-5"></i>
+          </a>
+        {% else %}
+          <a href="{{ url_for('auth.register') }}" class="px-4 py-2 rounded-full bg-[var(--color-brand)] text-white font-sans font-bold text-[10px] btn-lift whitespace-nowrap">Sign Up</a>
         {% endif %}
-        <button id="menu-btn" class="p-2.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] z-50" aria-label="Toggle Mobile Menu" aria-expanded="false">
-          <i id="menu-icon-open" data-lucide="menu" class="w-5 h-5"></i>
-          <i id="menu-icon-close" data-lucide="x" class="w-5 h-5 hidden"></i>
+        <button id="menu-btn" class="p-1.5 sm:p-2.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] z-50" aria-label="Toggle Mobile Menu" aria-expanded="false">
+          <i id="menu-icon-open" data-lucide="menu" class="w-4 sm:w-5 h-4 sm:h-5"></i>
+          <i id="menu-icon-close" data-lucide="x" class="w-4 sm:w-5 h-4 sm:h-5 hidden"></i>
         </button>
       </div>
     </div>
@@ -315,14 +337,14 @@
           <a href="{{ url_for('auth.settings') }}" class="flex items-center gap-3 font-semibold text-sm px-4 py-2 bg-[var(--bg-tertiary)] rounded-xl text-[var(--text-primary)]"><i data-lucide="settings" class="w-5 h-5"></i> Profile Settings</a>
         {% else %}
           <a href="{{ url_for('auth.login') }}" class="font-sans text-center font-bold text-sm text-[var(--text-primary)] border border-[var(--color-border)] py-3 rounded-xl hover:bg-[var(--bg-tertiary)] transition-all-smooth bg-[var(--bg-secondary)]">Sign In</a>
-          <a href="{{ url_for('auth.register') }}" class="font-sans text-center font-bold text-sm text-white bg-[var(--color-brand)] py-3 rounded-xl hover:bg-opacity-90 active:scale-95 transition-all-smooth btn-glow">Sign Up</a>
+          <a href="{{ url_for('auth.register') }}" class="font-sans text-center font-bold text-sm text-white bg-[var(--color-brand)] py-3 rounded-xl hover:bg-opacity-90 active:scale-95 transition-all-smooth">Sign Up</a>
         {% endif %}
       </div>
     </div>
   {% endif %}
 
   <!-- Content Block container -->
-  <main class="{% if request.endpoint and request.endpoint.startswith('admin.') %}flex-grow z-10{% else %}flex-grow pt-24 md:pt-28 z-10{% endif %}">
+  <main class="{% if request.endpoint and request.endpoint.startswith('admin.') %}flex-grow z-10{% else %}flex-grow pt-16 sm:pt-28 z-10{% endif %}">
     {% block content %}{% endblock %}
   </main>
 

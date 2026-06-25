@@ -5,7 +5,9 @@
 {% block head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-  #seller-map { height: 65vh; border-radius: 1rem; }
+  #seller-map { height: 350px; border-radius: 1rem; }
+  @media (min-width: 768px) { #seller-map { height: 55vh; } }
+  @media (min-width: 1024px) { #seller-map { height: 65vh; } }
   .leaflet-popup-content-wrapper { border-radius: 16px !important; background: #1a1a2e !important; color: #eee !important; box-shadow: 0 8px 32px rgba(0,0,0,.6) !important; }
   .leaflet-popup-tip { background: #1a1a2e !important; }
   .leaflet-popup-content { margin: 10px 14px; font-family: system-ui, sans-serif; }
@@ -29,13 +31,13 @@
 {% endblock %}
 
 {% block content %}
-<section class="max-w-6xl mx-auto px-6 py-8 relative z-10">
-  <div data-aos="fade-up" class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+<section class="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-8 relative z-10">
+  <div data-aos="fade-up" class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
     <div>
-      <h2 class="font-display font-extrabold text-2xl text-[var(--text-primary)]">Seller Map</h2>
-      <p class="font-sans text-xs text-[var(--text-secondary)] mt-1">Find sellers and freelancers near you on campus</p>
+      <h2 class="font-display font-extrabold text-xl sm:text-2xl text-[var(--text-primary)]">Seller Map</h2>
+      <p class="font-sans text-[11px] sm:text-xs text-[var(--text-secondary)] mt-0.5 sm:mt-1">Find sellers and freelancers near you on campus</p>
     </div>
-    <button id="route-toggle" class="px-4 py-2 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs shadow-md hover:scale-[1.02] transition-all-smooth active:scale-95 flex items-center gap-2 self-start">
+    <button id="route-toggle" class="w-full sm:w-fit px-4 py-2.5 sm:py-2 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-xs shadow-md hover:scale-[1.02] transition-all-smooth active:scale-95 flex items-center justify-center gap-2 self-start">
       <i data-lucide="route" class="w-4 h-4"></i> Get Directions
     </button>
   </div>

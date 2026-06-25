@@ -568,14 +568,7 @@ def release_funds(transaction_id):
         flash("Only the purchasing payer/client can release escrow funds.", "danger")
         return redirect(url_for('payments.dashboard'))
     
-    # Atomic: only transition if currently held_in_escrow — prevents double-release
-    result = db.session.execute(
-        sa_update(Transaction)
-        .where(Transaction.id == transaction_id)
-        .where(Transaction.status == TransactionStatus.held_in_escrow)
-        .values(status=TransactionStatus.released, released_at=datetime.utcnow())
-    )
-    if result.rowcount == 0:
+    if txn.status != TransactionStatus.held_in_escrow:
         flash("Funds have already been released or the transaction is in an invalid state.", "danger")
         return redirect(url_for('payments.dashboard'))
         
@@ -585,14 +578,41 @@ def release_funds(transaction_id):
         return redirect(url_for('payments.dashboard'))
         
     try:
-        # Create Paystack disbursement target
+        # Create Paystack disbursement target first
         recipient_code = create_paystack_transfer_recipient(
             name=vendor.full_name,
             account_number=vendor.phone,
             momo_provider=vendor.momo_provider
         )
+        if not recipient_code:
+            flash("Paystack transfer recipient creation failed. Admin has been notified and will process payout of GHS {:.2f} manually.".format(txn.seller_payout_amount), "warning")
+            current_app.logger.error(f"Paystack recipient creation failed for transaction {txn.id}, seller {vendor.id}")
+            return redirect(url_for('payments.dashboard'))
+            
+        # Dispatch transfer on Paystack
+        transfer_code = initiate_paystack_transfer(
+            amount_ghs=txn.seller_payout_amount,
+            recipient_code=recipient_code,
+            reason=f"Campus Plug Released Escrow payout code {txn.id}"
+        )
+        if not transfer_code:
+            flash("Paystack transfer failed (OTP or balance limit). Admin flagged for manual resolution of GHS {:.2f}.".format(txn.seller_payout_amount), "warning")
+            current_app.logger.error(f"Paystack transfer failed for transaction {txn.id}, seller {vendor.id}")
+            return redirect(url_for('payments.dashboard'))
         
-        # Log the state transition (status + released_at already set atomically above)
+        # Atomic: only transition if currently held_in_escrow — prevents double-release
+        result = db.session.execute(
+            sa_update(Transaction)
+            .where(Transaction.id == transaction_id)
+            .where(Transaction.status == TransactionStatus.held_in_escrow)
+            .values(status=TransactionStatus.released, released_at=datetime.utcnow())
+        )
+        if result.rowcount == 0:
+            flash("Funds already released by another process.", "warning")
+            return redirect(url_for('payments.dashboard'))
+        
+        txn.paystack_transfer_code = transfer_code
+        
         from models import TransactionLog
         log = TransactionLog(
             transaction_id=txn.id,
@@ -602,29 +622,10 @@ def release_funds(transaction_id):
         )
         db.session.add(log)
         prompt_reviews_for_transaction(txn, db.session)
-        
-        # Credit referral rewards
         credit_referral_reward(txn, db.session)
+        db.session.commit()
         
-        if not recipient_code:
-            db.session.commit()
-            flash("Funds released in system! Paystack transfer recipient creation failed. Admin flagged reference for manual payout of GHS {:.2f}.".format(txn.seller_payout_amount), "warning")
-            return redirect(url_for('payments.dashboard'))
-            
-        # Dispatch transfer on Paystack
-        transfer_code = initiate_paystack_transfer(
-            amount_ghs=txn.seller_payout_amount,
-            recipient_code=recipient_code,
-            reason=f"Campus Plug Released Escrow payout code {txn.id}"
-        )
-        
-        if transfer_code:
-            txn.paystack_transfer_code = transfer_code
-            db.session.commit()
-            flash(f"Boom! GHS {txn.seller_payout_amount:.2f} has been transferred directly to {vendor.full_name}'s MoMo account successfully.", "success")
-        else:
-            db.session.commit()
-            flash("Funds released in escrow! Paystack Transfer API returned an error (OTP or balance limit). System admin flagged reference GHS {:.2f} for manual resolution.".format(txn.seller_payout_amount), "warning")
+        flash(f"Boom! GHS {txn.seller_payout_amount:.2f} has been transferred directly to {vendor.full_name}'s MoMo account successfully.", "success")
             
     except Exception as e:
         db.session.rollback()
@@ -694,9 +695,12 @@ def refund_funds(transaction_id):
         return redirect(url_for('payments.dashboard'))
         
     try:
-        # Trigger Paystack Refund
+        # Trigger Paystack Refund — only transition DB if it succeeds
         if txn.paystack_reference:
-            initiate_paystack_refund(txn.paystack_reference)
+            refund_result = initiate_paystack_refund(txn.paystack_reference)
+            if not refund_result:
+                flash("Paystack refund API call failed. Please try again or contact support.", "danger")
+                return redirect(url_for('payments.dashboard'))
             
         txn.transition_to(TransactionStatus.refunded, db.session)
         

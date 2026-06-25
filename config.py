@@ -46,6 +46,8 @@ class Config:
             errors.append('SECRET_KEY is not set. Generate one: python3 -c "import secrets; print(secrets.token_hex(32))"')
         if not Config.PAYSTACK_SECRET_KEY or not Config.PAYSTACK_PUBLIC_KEY:
             errors.append('PAYSTACK_SECRET_KEY and PAYSTACK_PUBLIC_KEY must be set')
+        if not Config.RESEND_API_KEY:
+            errors.append('RESEND_API_KEY is not set — password resets and email notifications will fail silently')
         if production:
             db_url = os.environ.get('DATABASE_URL', '').strip()
             if not db_url:

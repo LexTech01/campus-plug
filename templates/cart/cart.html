@@ -95,7 +95,7 @@
       </div>
       <form action="{{ url_for('payments.cart_checkout') }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="px-8 py-4 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-sm shadow-md btn-lift btn-glow flex items-center gap-2 hover:opacity-95 transition-all-smooth">
+        <button type="submit" class="px-8 py-4 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-sm shadow-md btn-lift flex items-center gap-2 hover:opacity-95 transition-all-smooth">
           <i data-lucide="credit-card" class="w-5 h-5"></i> Checkout All (GHS {{ "{:,.2f}".format(total) }})
         </button>
       </form>

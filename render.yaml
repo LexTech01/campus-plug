@@ -14,7 +14,7 @@ services:
           name: campus-plug-db
           property: connectionString
       - key: APP_URL
-        value: https://campus-plug.onrender.com
+        value: https://campus-plug-6f51.onrender.com
       - key: RESEND_API_KEY
         sync: false
       - key: PAYSTACK_SECRET_KEY
