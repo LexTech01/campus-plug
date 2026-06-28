@@ -16,9 +16,9 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('users', sa.Column('email_verified', sa.Boolean(), server_default=sa.text('0'), nullable=False))
+    op.add_column('users', sa.Column('email_verified', sa.Boolean(), nullable=True))
     op.add_column('users', sa.Column('email_verification_token', sa.String(200), nullable=True))
-    op.add_column('users', sa.Column('failed_login_attempts', sa.Integer(), server_default=sa.text('0'), nullable=False))
+    op.add_column('users', sa.Column('failed_login_attempts', sa.Integer(), nullable=True))
     op.add_column('users', sa.Column('locked_until', sa.DateTime(), nullable=True))
     op.create_index(op.f('ix_users_email_verification_token'), 'users', ['email_verification_token'])
 
