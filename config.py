@@ -52,12 +52,12 @@ class Config:
             db_url = os.environ.get('DATABASE_URL', '').strip()
             if not db_url:
                 errors.append('DATABASE_URL is not set')
-            import sys
-            if errors:
-                print("CRITICAL CONFIGURATION ERRORS:", file=sys.stderr)
-                for err in errors:
-                    print(f"  - {err}", file=sys.stderr)
-                sys.exit(1)
+        import sys
+        if errors:
+            print("CRITICAL CONFIGURATION ERRORS:", file=sys.stderr)
+            for err in errors:
+                print(f"  - {err}", file=sys.stderr)
+            sys.exit(1)
         return errors
 
 

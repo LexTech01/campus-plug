@@ -208,7 +208,8 @@
           } else {
             var div = document.createElement('div');
             div.className = 'p-2 hover:bg-[var(--bg-tertiary)] cursor-pointer text-xs text-[var(--text-primary)] border-b border-[var(--color-border)] last:border-0 flex items-center gap-2';
-            div.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400 flex-shrink-0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>' + (data.display_name || q) + '</span>';
+            div.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400 flex-shrink-0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span></span>';
+            div.querySelector('span').textContent = data.display_name || q;
             div.addEventListener('click', function() {
               setLocation(parseFloat(data.lat).toFixed(6), parseFloat(data.lon).toFixed(6), (data.display_name || '').split(',').slice(0, 3).join(',').trim());
               searchResults.classList.add('hidden');

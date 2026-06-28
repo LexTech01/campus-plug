@@ -442,7 +442,7 @@
   <script>
     // Heartbeat — updates last_seen every 2 minutes
     setInterval(() => {
-      fetch('/auth/heartbeat', { method: 'GET', cache: 'no-store' });
+      fetch('/auth/heartbeat', { method: 'POST', cache: 'no-store' });
     }, 120000);
   </script>
   {% endif %}

@@ -142,6 +142,12 @@ def send_message():
             return jsonify({'success': False, 'error': 'Missing fields'}), 400
         flash('Cannot send empty message.', 'danger')
         return redirect(url_for('chat.inbox'))
+
+    if len(body) > 5000:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
+            return jsonify({'success': False, 'error': 'Message too long (max 5000 characters).'}), 400
+        flash('Message too long (max 5000 characters).', 'danger')
+        return redirect(url_for('chat.inbox'))
         
     recipient = User.query.get_or_404(recipient_id)
     

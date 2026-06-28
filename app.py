@@ -2,7 +2,7 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 
-from flask import Flask, render_template,redirect, url_for, flash, jsonify
+from flask import Flask, render_template,redirect, url_for, flash, jsonify, request
 from flask_login import LoginManager
 try:
     from flask_migrate import Migrate, upgrade
@@ -71,6 +71,10 @@ def create_app():
                 directives.append(f"{key} {val}")
             response.headers['Content-Security-Policy'] = '; '.join(directives)
         return response
+
+    # Proxy fix for correct IP detection behind reverse proxy
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     # Initialize extensions
     db.init_app(app)
@@ -243,20 +247,21 @@ def create_app():
         try:
             db.session.execute(db.text('SELECT 1'))
             # Auto-release expired escrow (runs at most every 15 min)
-            import tempfile, os as _os
-            _lock = _os.path.join(tempfile.gettempdir(), 'campus_plug_autorelease')
+            import tempfile
+            from pathlib import Path
+            _lock = Path(tempfile.gettempdir()) / 'campus_plug_autorelease'
             _now = __import__('time').time()
-            _last = float(_os.popen(f'cat {_lock} 2>/dev/null || echo 0').read().strip() or 0)
+            _last = float(_lock.read_text().strip()) if _lock.exists() else 0
             if _now - _last > 900:
-                _os.system(f'echo {_now} > {_lock}')
+                _lock.write_text(str(_now))
                 try:
                     from blueprints.payments import auto_release_expired_transactions
                     auto_release_expired_transactions()
                 except Exception as ae:
                     app.logger.error(f"Auto-release: {ae}")
             return jsonify({'status': 'healthy', 'database': 'ok'})
-        except Exception as e:
-            return jsonify({'status': 'unhealthy', 'database': str(e)}), 500
+        except Exception:
+            return jsonify({'status': 'unhealthy', 'database': 'connection failed'}), 500
 
     # Create Database and Seed if empty
     with app.app_context():

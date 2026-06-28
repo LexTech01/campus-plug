@@ -91,6 +91,10 @@ class User(db.Model, UserMixin):
     referred_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     completed_referral_count = db.Column(db.Integer, default=0)
     pending_fee_waivers = db.Column(db.Integer, default=0)
+    email_verified = db.Column(db.Boolean, default=False)
+    email_verification_token = db.Column(db.String(200), nullable=True, index=True)
+    failed_login_attempts = db.Column(db.Integer, default=0)
+    locked_until = db.Column(db.DateTime, nullable=True)
     last_seen = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     

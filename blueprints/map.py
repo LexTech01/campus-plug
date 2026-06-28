@@ -54,4 +54,4 @@ def geocode():
             return jsonify({'lat': data[0]['lat'], 'lon': data[0]['lon'], 'display_name': data[0]['display_name']})
         return jsonify({'error': 'Location not found'}), 404
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Geocoding service temporarily unavailable.'}), 500

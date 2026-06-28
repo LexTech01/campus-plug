@@ -291,7 +291,7 @@ document.querySelectorAll('.comment-form').forEach(function(form) {
         var div = document.createElement('div');
         div.className = 'flex items-start gap-2';
         div.innerHTML =
-          '<img src="' + data.comment.user_avatar + '" alt="" class="w-6 h-6 rounded-full object-cover flex-shrink-0">' +
+          '<img src="' + escapeHtml(data.comment.user_avatar) + '" alt="" class="w-6 h-6 rounded-full object-cover flex-shrink-0">' +
           '<div class="flex-1 bg-[var(--bg-secondary)] rounded-xl px-3 py-1.5 border border-[var(--color-border)]/50">' +
           '<p class="font-display font-bold text-[10px] text-[var(--text-primary)]">' +
           '<a href="/auth/user/' + data.comment.user_id + '" class="hover:underline">' + escapeHtml(data.comment.user_name) + '</a></p>' +

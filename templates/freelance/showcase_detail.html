@@ -254,7 +254,7 @@ document.querySelectorAll('.comment-form').forEach(function(form) {
         var div = document.createElement('div');
         div.className = 'flex items-start gap-2';
         div.innerHTML =
-          '<img src="' + data.comment.user_avatar + '" alt="" class="w-7 h-7 rounded-full object-cover flex-shrink-0">' +
+          '<img src="' + escHtml(data.comment.user_avatar) + '" alt="" class="w-7 h-7 rounded-full object-cover flex-shrink-0">' +
           '<div class="flex-1"><div class="bg-[var(--bg-secondary)] rounded-xl px-3 py-2 border border-[var(--color-border)]/50">' +
           '<p class="font-display font-bold text-[11px] text-[var(--text-primary)]">' +
           '<a href="/auth/user/' + data.comment.user_id + '" class="hover:underline">' + escHtml(data.comment.user_name) + '</a></p>' +

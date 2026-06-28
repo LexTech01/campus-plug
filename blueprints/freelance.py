@@ -217,6 +217,8 @@ def detail(gig_id):
             except ValueError:
                 errors['price'] = 'Enter valid bid price'
                 
+        if len(message) > 5000:
+            errors['message'] = 'Proposal message too long (max 5000 characters).'
         if not message:
             errors['message'] = 'Proposal message details required'
         if not delivery_time:

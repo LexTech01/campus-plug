@@ -427,7 +427,7 @@ def resolve_dispute(transaction_id):
             
     except Exception as e:
         db.session.rollback()
-        flash(f"An error occurred while executing dispute resolution: {e}", "danger")
+        flash("An error occurred while executing dispute resolution. Please try again.", "danger")
         
     return redirect(url_for('admin.disputes_list'))
 

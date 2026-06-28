@@ -54,7 +54,7 @@ def register():
             'momo_provider': momo_provider,
             'bio': bio,
             'account_type': account_type,
-            'referral_code': referral_code_input
+            'referral_code': referral_code_input,
         }
         
         # Backend Validations
@@ -126,7 +126,8 @@ def register():
                 account_type=account_type,
                 avatar='/static/images/default-avatar.png',
                 referral_code=generate_referral_code(),
-                referred_by_id=referred_by.id if referred_by else None
+                referred_by_id=referred_by.id if referred_by else None,
+                email_verification_token=secrets.token_urlsafe(32)
             )
             new_user.set_password(password)
             
@@ -140,6 +141,18 @@ def register():
             
             login_user(new_user)
             flash('Success! Account created and logged in.', 'success')
+
+            try:
+                verify_url = url_for('auth.verify_email', token=new_user.email_verification_token, _external=True)
+                html_body = render_template('emails/verify_email.html', user=new_user, verify_url=verify_url)
+                send_email(
+                    to=new_user.email,
+                    subject='Verify your Campus Plug email',
+                    html_body=html_body
+                )
+            except Exception as e:
+                current_app.logger.warning(f"Failed to send verification email to {new_user.email}: {e}")
+
             return redirect(url_for('index'))
             
     return render_template('auth/signup.html', errors=errors, form_data=form_data)
@@ -218,10 +231,18 @@ def login():
             
         if not errors:
             user = User.query.filter_by(email=email).first()
-            if user and user.check_password(password):
+            if user and user.locked_until and datetime.utcnow() < user.locked_until:
+                remaining = int((user.locked_until - datetime.utcnow()).total_seconds() / 60)
+                errors['general'] = f'Account temporarily locked. Try again in {remaining} minute(s).'
+            elif user and user.check_password(password):
+                user.failed_login_attempts = 0
+                user.locked_until = None
+                db.session.commit()
                 if user.is_suspended:
                     errors['general'] = 'Your account has been suspended by an administrator.'
                 else:
+                    if not user.email_verified:
+                        flash('Please verify your email address to access all features.', 'warning')
                     login_user(user, remember=remember)
                     flash(f'Welcome back, {user.full_name}!', 'success')
 
@@ -235,7 +256,11 @@ def login():
                         next_page = url_for('index')
                     return redirect(next_page)
             else:
-                # Security guideline: do not specify which credential failed
+                if user:
+                    user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+                    if user.failed_login_attempts >= 10:
+                        user.locked_until = datetime.utcnow() + timedelta(minutes=15)
+                    db.session.commit()
                 errors['general'] = 'Incorrect email or password. Please try again.'
                 
     return render_template('auth/login.html', errors=errors, form_data=form_data)
@@ -249,7 +274,46 @@ def logout():
     return redirect(url_for('index'))
 
 
-@auth_bp.route('/heartbeat')
+@auth_bp.route('/verify/<token>')
+@login_required
+def verify_email(token):
+    if current_user.email_verified:
+        flash('Your email is already verified.', 'info')
+    elif current_user.email_verification_token == token:
+        current_user.email_verified = True
+        current_user.email_verification_token = None
+        db.session.commit()
+        flash('Email verified successfully!', 'success')
+    else:
+        flash('Invalid or expired verification link.', 'danger')
+    return redirect(url_for('index'))
+
+
+@auth_bp.route('/resend-verification', methods=['POST'])
+@login_required
+@rate_limit('resend_verification', max_attempts=3, window=300)
+def resend_verification():
+    if current_user.email_verified:
+        flash('Your email is already verified.', 'info')
+        return redirect(url_for('index'))
+    current_user.email_verification_token = secrets.token_urlsafe(32)
+    db.session.commit()
+    try:
+        verify_url = url_for('auth.verify_email', token=current_user.email_verification_token, _external=True)
+        html_body = render_template('emails/verify_email.html', user=current_user, verify_url=verify_url)
+        send_email(
+            to=current_user.email,
+            subject='Verify your Campus Plug email',
+            html_body=html_body
+        )
+        flash('Verification email sent! Check your inbox.', 'success')
+    except Exception as e:
+        current_app.logger.warning(f"Failed to send verification email: {e}")
+        flash('Could not send verification email. Try again later.', 'danger')
+    return redirect(url_for('index'))
+
+
+@auth_bp.route('/heartbeat', methods=['POST'])
 @login_required
 def heartbeat():
     current_user.last_seen = datetime.utcnow()

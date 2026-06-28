@@ -248,8 +248,10 @@ def detail(listing_id):
         (Listing.category == listing.category) | (Listing.university == listing.university)
     ).limit(3).all()
     
-    # Offers for this listing (sorted newest first)
-    offers = Offer.query.filter_by(listing_id=listing.id).order_by(Offer.created_at.desc()).all()
+    # Offers for this listing (sorted newest first) — only visible to seller
+    offers = []
+    if current_user.is_authenticated and current_user.id == listing.seller_id:
+        offers = Offer.query.filter_by(listing_id=listing.id).order_by(Offer.created_at.desc()).all()
     
     # Buyer's own pending offer
     buyer_offer = None
@@ -445,6 +447,10 @@ def make_offer(listing_id):
 
     if not price_str:
         flash('Please enter an offer price.', 'danger')
+        return redirect(url_for('marketplace.detail', listing_id=listing.id))
+
+    if len(message) > 2000:
+        flash('Offer message too long (max 2000 characters).', 'danger')
         return redirect(url_for('marketplace.detail', listing_id=listing.id))
 
     try:

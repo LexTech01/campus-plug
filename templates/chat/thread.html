@@ -67,7 +67,7 @@
       <!-- Quick action info items -->
       <div class="text-right text-[10px] font-mono text-[var(--text-secondary)]">
         {% if other_user.phone %}
-          <span class="block">Contacts: <strong>{{ other_user.phone[:3] }}****{{ other_user.phone[-3:] }}</strong> ({{ other_user.momo_provider or 'No Momo Provider Selected' }})</span>
+          <span class="block">Contact: <strong>*******{{ other_user.phone[-3:] }}</strong> ({{ other_user.momo_provider or 'No Momo Provider Selected' }})</span>
         {% else %}
           <span class="block">Contact: <strong>No phone provided</strong></span>
         {% endif %}
