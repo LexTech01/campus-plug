@@ -802,7 +802,23 @@ html.dark .card-hover-lift:hover {
 
 /* Landscape phone optimizations */
 @media (orientation: landscape) and (max-height: 500px) {
-  .hero-section { min-height: auto !important; padding-top: 1rem !important; padding-bottom: 1rem !important; }
+  .hero-section { min-height: auto !important; height: auto !important; padding-top: 1rem !important; padding-bottom: 1rem !important; }
+}
+
+/* Ensure hero fills viewport minus fixed header */
+:root {
+  --hero-header-height: 5.5rem;
+}
+.hero-section {
+  min-height: calc(100vh - var(--hero-header-height));
+  height: calc(100vh - var(--hero-header-height));
+  padding-top: var(--hero-header-height);
+}
+
+@media (max-width: 640px) {
+  :root {
+    --hero-header-height: 4rem;
+  }
 }
 
 /* ── Responsive tweaks ── */

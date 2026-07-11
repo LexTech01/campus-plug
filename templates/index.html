@@ -67,14 +67,14 @@
 
 {% block content %}
 <!-- Hero Section -->
-<section class="relative min-h-[90vh] sm:min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden">
+<section class="hero-section relative flex items-center overflow-hidden">
   <!-- Hero background image -->
   <div class="absolute inset-0 z-0 overflow-hidden">
     <img src="{{ url_for('static', filename='images/hero/hero-bg.jpg') }}" alt="Campus life" class="w-full h-full object-cover object-[center_20%] sm:object-center scale-125 sm:scale-100" style="filter:blur(6px)">
     <div class="absolute inset-0 bg-gradient-to-b from-black/85 via-black/75 to-black/95"></div>
     <div class="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-black/40"></div>
   </div>
-  <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 relative z-10 flex items-center justify-center py-16 sm:py-32 lg:py-40">
+<div class="max-w-7xl mx-auto w-full px-4 sm:px-6 relative z-10 flex items-center justify-center h-full">
 
     <!-- Background Visual (positioned behind text) -->
     <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -123,10 +123,10 @@
 
       <!-- CTAs -->
       <div data-aos="fade-up" data-aos-delay="400" class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-10 sm:mt-0 mb-12 sm:mb-16">
-        <a href="{{ url_for('marketplace.browse') }}" class="w-fit sm:w-fit px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-sm shadow-xl btn-lift btn-glow flex items-center justify-center gap-2">
+        <a href="{{ url_for('marketplace.browse') }}" class="w-[90vw] max-w-[18rem] sm:w-auto px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-sm shadow-xl btn-lift btn-glow flex items-center justify-center gap-2">
           <i data-lucide="tag" class="w-4 h-4"></i> Marketplace
         </a>
-        <a href="{{ url_for('freelance.browse') }}" class="w-fit sm:w-fit px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl bg-black/50 text-white font-sans font-bold text-sm border border-white/25 hover:bg-black/60 hover:scale-105 transition-all-smooth flex items-center justify-center gap-2 shadow-xl" style="text-shadow:0 1px 8px rgba(0,0,0,0.5)">
+        <a href="{{ url_for('freelance.browse') }}" class="w-[90vw] max-w-[18rem] sm:w-auto px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl bg-black/50 text-white font-sans font-bold text-sm border border-white/25 hover:bg-black/60 hover:scale-105 transition-all-smooth flex items-center justify-center gap-2 shadow-xl" style="text-shadow:0 1px 8px rgba(0,0,0,0.5)">
           <i data-lucide="play" class="w-4 h-4"></i> Explore Gigs
         </a>
       </div>

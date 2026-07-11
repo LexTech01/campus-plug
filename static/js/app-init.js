@@ -1,5 +1,15 @@
+function syncHeroHeaderHeight() {
+  var header = document.getElementById('main-header');
+  if (!header) return;
+  var height = header.getBoundingClientRect().height;
+  document.documentElement.style.setProperty('--hero-header-height', height + 'px');
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  syncHeroHeaderHeight();
+  window.addEventListener('resize', syncHeroHeaderHeight);
 
   setInterval(function () {
     fetch('/auth/heartbeat', { method: 'POST', cache: 'no-store' }).catch(function () {});
