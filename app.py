@@ -1,8 +1,14 @@
 import os
+import json
+import time
+import uuid
 import logging
+import tempfile
+import secrets
+from pathlib import Path
 from logging.handlers import RotatingFileHandler
 
-from flask import Flask, render_template,redirect, url_for, flash, jsonify, request
+from flask import Flask, render_template, redirect, url_for, flash, jsonify, request, send_from_directory, g
 from flask_login import LoginManager
 try:
     from flask_migrate import Migrate, upgrade
@@ -43,15 +49,40 @@ def create_app():
 
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-    # Production logging
-    if not app.debug:
-        os.makedirs('logs', exist_ok=True)
-        handler = RotatingFileHandler('logs/campus_plug.log', maxBytes=10*1024*1024, backupCount=5)
-        handler.setLevel(logging.INFO)
-        handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s [%(name)s] %(message)s'))
-        app.logger.addHandler(handler)
-        app.logger.setLevel(logging.INFO)
-        app.logger.info('Campus Plug starting')
+    # Structured JSON logging with correlation IDs
+    class JsonFormatter(logging.Formatter):
+        def format(self, record):
+            log_entry = {
+                'timestamp': self.formatTime(record),
+                'level': record.levelname,
+                'logger': record.name,
+                'message': record.getMessage(),
+            }
+            if hasattr(record, 'correlation_id'):
+                log_entry['correlation_id'] = record.correlation_id
+            if record.exc_info and record.exc_info[0]:
+                log_entry['exception'] = self.formatException(record.exc_info)
+            return json.dumps(log_entry)
+
+    os.makedirs('logs', exist_ok=True)
+    handler = RotatingFileHandler('logs/campus_plug.log', maxBytes=10*1024*1024, backupCount=5)
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(JsonFormatter())
+    app.logger.addHandler(handler)
+    app.logger.setLevel(logging.INFO)
+    app.logger.info('Campus Plug starting')
+
+    # Correlation ID per request
+    @app.before_request
+    def assign_correlation_id():
+        g.correlation_id = request.headers.get('X-Correlation-ID', str(uuid.uuid4()))
+
+    @app.after_request
+    def log_request(response):
+        if not app.debug:
+            extra = {'correlation_id': g.get('correlation_id')}
+            app.logger.info(f'{request.method} {request.path} -> {response.status_code}', extra=extra)
+        return response
 
     # Security headers
     @app.after_request
@@ -116,7 +147,6 @@ def create_app():
             unread_messages_count = Message.query.filter_by(recipient_id=current_user.id, is_read=False).count()
             recent_notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).limit(5).all()
             cart_count = CartItem.query.filter_by(buyer_id=current_user.id).count()
-        import time as _time
         return {
             'UNIVERSITIES': UNIVERSITIES,
             'CATEGORIES': CATEGORIES,
@@ -129,7 +159,7 @@ def create_app():
             'recent_notifications': recent_notifications,
             'cart_count': cart_count,
             'SUPPORT_EMAIL': 'campusplug30@gmail.com',
-            'cache_buster': int(_time.time()),
+            'cache_buster': int(time.time()),
         }
 
     # Root route - Landing page
@@ -238,7 +268,6 @@ def create_app():
     # Favicon
     @app.route('/favicon.ico')
     def favicon():
-        from flask import send_from_directory
         return send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
     # Health check
@@ -246,11 +275,8 @@ def create_app():
     def health():
         try:
             db.session.execute(db.text('SELECT 1'))
-            # Auto-release expired escrow (runs at most every 15 min)
-            import tempfile
-            from pathlib import Path
             _lock = Path(tempfile.gettempdir()) / 'campus_plug_autorelease'
-            _now = __import__('time').time()
+            _now = time.time()
             _last = float(_lock.read_text().strip()) if _lock.exists() else 0
             if _now - _last > 900:
                 _lock.write_text(str(_now))
@@ -281,11 +307,13 @@ def create_app():
 
 def seed_data():
     if User.query.first() is not None:
-        return # Database already seeded
+        return
     
     print("Database is empty. Seeding realistic Ghana Campus Plug data...")
     
-    # 1. Create Seed Users with safe passwords
+    # Use dev passwords from environment if provided, otherwise generate secure random ones
+    _password = os.environ.get('DEV_STUDENT_PASSWORD') or secrets.token_urlsafe(10)
+    
     u1 = User(
         email="yaw@knust.edu.gh",
         full_name="Yaw Boateng",
@@ -301,7 +329,7 @@ def seed_data():
         longitude=-1.5716,
         location_name='KNUST Campus, Kumasi'
     )
-    u1.password_hash = "scrypt:32768:8:1$TTLpP1eEOipRQTqC$cd502b4bc514d2d8218f3801a21e7fb8d50362bc8b3dcfc5ce0ef841c79655a7ada1251723876f898e608b53c7a5e9d1790fee78cb944975ebdd5d0a947c5c1e"
+    u1.set_password(_password)
     
     u2 = User(
         email="abena@ug.edu.gh",
@@ -318,7 +346,7 @@ def seed_data():
         longitude=-0.1871,
         location_name='University of Ghana, Legon'
     )
-    u2.password_hash = "scrypt:32768:8:1$TTLpP1eEOipRQTqC$cd502b4bc514d2d8218f3801a21e7fb8d50362bc8b3dcfc5ce0ef841c79655a7ada1251723876f898e608b53c7a5e9d1790fee78cb944975ebdd5d0a947c5c1e"
+    u2.set_password(_password)
     
     u3 = User(
         email="ernest@ashesi.edu.gh",
@@ -335,7 +363,7 @@ def seed_data():
         longitude=-0.2066,
         location_name='Ashesi University, Berekuso'
     )
-    u3.password_hash = "scrypt:32768:8:1$TTLpP1eEOipRQTqC$cd502b4bc514d2d8218f3801a21e7fb8d50362bc8b3dcfc5ce0ef841c79655a7ada1251723876f898e608b53c7a5e9d1790fee78cb944975ebdd5d0a947c5c1e"
+    u3.set_password(_password)
 
     u4 = User(
         email="esi@ucc.edu.gh",
@@ -348,7 +376,7 @@ def seed_data():
         is_verified=True,
         referral_code=generate_referral_code()
     )
-    u4.password_hash = "scrypt:32768:8:1$TTLpP1eEOipRQTqC$cd502b4bc514d2d8218f3801a21e7fb8d50362bc8b3dcfc5ce0ef841c79655a7ada1251723876f898e608b53c7a5e9d1790fee78cb944975ebdd5d0a947c5c1e"
+    u4.set_password(_password)
 
     u5 = User(
         email="alexanderwinfred17@gmail.com",
@@ -363,10 +391,18 @@ def seed_data():
         is_admin=True,
         referral_code=generate_referral_code()
     )
-    u5.password_hash = "scrypt:32768:8:1$J64MXkphnToFrgoF$7b7bbffe34dc5197513a18a8d549cc3fa7be1d456cfdb54080b9604e1c102e1499c9249f23797c851a03a6365fe86e891e80c07a35df613880b66d7b13ef1dd7"
+    # Admin password comes from env or is generated; printed once for developer convenience
+    admin_password = os.environ.get('DEV_ADMIN_PASSWORD') or secrets.token_urlsafe(12)
+    u5.set_password(admin_password)
 
     db.session.add_all([u1, u2, u3, u4, u5])
-    db.session.commit() # Commit users so we can link foreign keys
+    db.session.commit()
+
+    # Print generated dev credentials so developer can log in locally (only when seeding in debug)
+    try:
+        print(f"Seeded dev passwords: STUDENT_PASSWORD={_password} ADMIN_PASSWORD={admin_password}")
+    except Exception:
+        pass
 
     # 2. Create Seed Listings (Seller-to-student peer-marketplace items)
     l1 = Listing(

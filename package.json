@@ -1,0 +1,27 @@
+{
+  "name": "campus-plug",
+  "version": "1.0.0",
+  "description": "Peer-to-peer campus marketplace and freelance gig platform for university students in Ghana.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LexTech01/campus-plug.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/LexTech01/campus-plug/issues"
+  },
+  "homepage": "https://github.com/LexTech01/campus-plug#readme",
+  "dependencies": {
+    "autoprefixer": "^10.5.2",
+    "cssnano": "^8.0.2",
+    "postcss": "^8.5.16",
+    "tailwindcss": "^3.4.19"
+  }
+}

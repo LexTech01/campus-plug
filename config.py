@@ -1,23 +1,8 @@
 import os
-import re
+from datetime import timedelta
+from dotenv import load_dotenv
 
-def _load_env():
-    paths = ['.env']
-    for p in paths:
-        if os.path.exists(p):
-            with open(p, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith('#'):
-                        continue
-                    if '=' in line:
-                        key, val = line.split('=', 1)
-                        key = key.strip()
-                        val = val.strip().strip('"').strip("'")
-                        if key and key not in os.environ:
-                            os.environ[key] = val
-
-_load_env()
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 
 class Config:
@@ -38,6 +23,9 @@ class Config:
 
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=24)
+
+    REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
 
     @staticmethod
     def validate(production=False):
@@ -67,6 +55,18 @@ class DevelopmentConfig(Config):
     SESSION_COOKIE_SECURE = False
     WTF_CSRF_ENABLED = True
 
+    CONTENT_SECURITY_POLICY = {
+        'default-src': "'self'",
+        'script-src': "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://js.paystack.co https://unpkg.com",
+        'style-src': "'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
+        'img-src': "'self' data: https:",
+        'font-src': "'self' https://fonts.gstatic.com",
+        'connect-src': "'self' https://api.paystack.co https://nominatim.openstreetmap.org https://router.project-osrm.org",
+        'frame-src': "'self' https://js.paystack.co",
+        'object-src': "'none'",
+        'base-uri': "'self'",
+    }
+
 
 class ProductionConfig(Config):
     DEBUG = False
@@ -77,8 +77,8 @@ class ProductionConfig(Config):
 
     CONTENT_SECURITY_POLICY = {
         'default-src': "'self'",
-        'script-src': "'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://js.paystack.co https://unpkg.com 'unsafe-inline'",
-        'style-src': "'self' https://cdn.tailwindcss.com https://fonts.googleapis.com https://unpkg.com 'unsafe-inline'",
+        'script-src': "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://js.paystack.co https://unpkg.com",
+        'style-src': "'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
         'img-src': "'self' data: https:",
         'font-src': "'self' https://fonts.gstatic.com",
         'connect-src': "'self' https://api.paystack.co https://nominatim.openstreetmap.org https://router.project-osrm.org",

@@ -1,31 +1,11 @@
 import os
-from io import BytesIO
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
 from flask_login import login_required, current_user
 from models import db, User, Listing, Offer, CATEGORIES, CONDITIONS, DELIVERY_POLICIES, UNIVERSITIES, Notification
-from werkzeug.utils import secure_filename
-from PIL import Image
+from utils import sanitize_plain_text
+from image_utils import allowed_file, validate_image_content, validate_image_size, save_upload
 
 marketplace_bp = Blueprint('marketplace', __name__)
-
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
-
-def validate_image_content(file_stream):
-    try:
-        img = Image.open(file_stream)
-        img.verify()
-        file_stream.seek(0)
-        return True
-    except Exception:
-        return False
-
-def validate_image_size(file_storage, max_mb=5):
-    file_storage.seek(0, 2)
-    size = file_storage.tell()
-    file_storage.seek(0)
-    return size <= max_mb * 1024 * 1024
 
 @marketplace_bp.route('/marketplace')
 def browse():
@@ -93,8 +73,8 @@ def create_listing():
     form_data = {}
     
     if request.method == 'POST':
-        title = request.form.get('title', '').strip()
-        description = request.form.get('description', '').strip()
+        title = sanitize_plain_text(request.form.get('title', '').strip())
+        description = sanitize_plain_text(request.form.get('description', '').strip())
         price_str = request.form.get('price', '').strip()
         original_price_str = request.form.get('original_price', '').strip()
         category = request.form.get('category', '')
@@ -199,15 +179,9 @@ def create_listing():
                 errors['original_price'] = 'Please enter a valid original price'
 
         if not errors:
-            # Save uploaded photos to static/uploads
             for idx, file in enumerate(uploaded_files):
-                filename = secure_filename(file.filename)
-                # Prefix with timestamp to make unique
-                import time
-                filename = f"{int(time.time())}_{idx}_{filename}"
-                file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-                file.save(file_path)
-                photos_urls.append(f"/static/uploads/{filename}")
+                url = save_upload(file, current_app.config['UPLOAD_FOLDER'], prefix=f"{idx}_")
+                photos_urls.append(url)
                 
             photos_str = ','.join(photos_urls) if photos_urls else '/static/images/placeholder.jpg'
             
@@ -287,8 +261,8 @@ def edit_listing(listing_id):
     }
     
     if request.method == 'POST':
-        title = request.form.get('title', '').strip()
-        description = request.form.get('description', '').strip()
+        title = sanitize_plain_text(request.form.get('title', '').strip())
+        description = sanitize_plain_text(request.form.get('description', '').strip())
         price_str = request.form.get('price', '').strip()
         original_price_str = request.form.get('original_price', '').strip()
         category = request.form.get('category', '')
@@ -393,12 +367,8 @@ def edit_listing(listing_id):
             new_urls = []
             for f in uploaded_files:
                 if allowed_file(f.filename) and validate_image_content(f):
-                    import time
-                    filename = secure_filename(f.filename)
-                    filename = f"{int(time.time())}_{len(existing_photos) + len(new_urls)}_{filename}"
-                    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-                    f.save(file_path)
-                    new_urls.append(f"/static/uploads/{filename}")
+                    url = save_upload(f, current_app.config['UPLOAD_FOLDER'], prefix=f"{len(existing_photos) + len(new_urls)}_")
+                    new_urls.append(url)
 
             # Keep photos not in remove list
             kept_photos = [p for p in existing_photos if p not in remove_urls]
@@ -443,7 +413,7 @@ def make_offer(listing_id):
         return redirect(url_for('marketplace.detail', listing_id=listing.id))
 
     price_str = request.form.get('offer_price', '').strip()
-    message = request.form.get('offer_message', '').strip()
+    message = sanitize_plain_text(request.form.get('offer_message', '').strip())
 
     if not price_str:
         flash('Please enter an offer price.', 'danger')
@@ -503,7 +473,7 @@ def respond_offer(listing_id, offer_id):
         return redirect(url_for('marketplace.detail', listing_id=listing.id))
 
     action = request.form.get('action', '')
-    note = request.form.get('seller_note', '').strip()
+    note = sanitize_plain_text(request.form.get('seller_note', '').strip())
 
     if action == 'accept':
         offer.status = 'accepted'

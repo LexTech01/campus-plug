@@ -1,9 +1,9 @@
-from io import BytesIO
 from flask import Blueprint, render_template, redirect, url_for, request, flash, abort, jsonify
 from flask_login import login_required, current_user
 from models import db, User, Gig, Proposal, Notification, ShowcasePost, ShowcaseLike, ShowcaseComment, GIG_CATEGORIES, UNIVERSITIES
 from datetime import datetime
-from PIL import Image
+from utils import sanitize_plain_text
+from image_utils import allowed_file, validate_image_content, validate_image_size, save_upload
 
 freelance_bp = Blueprint('freelance', __name__)
 
@@ -61,8 +61,8 @@ def create_gig():
     form_data = {}
     
     if request.method == 'POST':
-        title = request.form.get('title', '').strip()
-        description = request.form.get('description', '').strip()
+        title = sanitize_plain_text(request.form.get('title', '').strip())
+        description = sanitize_plain_text(request.form.get('description', '').strip())
         category = request.form.get('category', '')
         deadline = request.form.get('deadline', '').strip()
         location_type = request.form.get('location_type', '').strip()
@@ -197,8 +197,8 @@ def detail(gig_id):
             return redirect(url_for('freelance.detail', gig_id=gig.id))
             
         price_str = request.form.get('price', '').strip()
-        delivery_time = request.form.get('delivery_time', '').strip()
-        message = request.form.get('message', '').strip()
+        delivery_time = sanitize_plain_text(request.form.get('delivery_time', '').strip())
+        message = sanitize_plain_text(request.form.get('message', '').strip())
         
         form_data = {
             'price': price_str,
@@ -398,8 +398,8 @@ def create_showcase():
     form_data = {}
     
     if request.method == 'POST':
-        title = request.form.get('title', '').strip()
-        content = request.form.get('content', '').strip()
+        title = sanitize_plain_text(request.form.get('title', '').strip())
+        content = sanitize_plain_text(request.form.get('content', '').strip())
         
         form_data = {
             'title': title,
@@ -422,40 +422,17 @@ def create_showcase():
             
         for file in uploaded_files:
             if 'media' not in errors:
-                from werkzeug.utils import secure_filename
-                import time
-                import os
-                from flask import current_app
-                
-                ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
-                filename = secure_filename(file.filename)
-                ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-                
-                if ext not in ALLOWED_EXTENSIONS:
+                if not allowed_file(file.filename):
                     errors['media'] = 'Allowed file formats: PNG, JPG, JPEG, WEBP, GIF'
                     break
-                
-                file.seek(0, 2)
-                size_bytes = file.tell()
-                file.seek(0)
-                if size_bytes > 5 * 1024 * 1024:
+                if not validate_image_size(file):
                     errors['media'] = 'Each image must be less than 5 MB'
                     break
-                    
-                try:
-                    img = Image.open(file)
-                    img.verify()
-                    file.seek(0)
-                except Exception:
+                if not validate_image_content(file):
                     errors['media'] = 'File appears to be corrupted or is not a valid image'
                     break
-                    
-                filename = f"showcase_{int(time.time())}_{len(media_urls)}_{filename}"
-                upload_folder = current_app.config.get('UPLOAD_FOLDER', 'static/uploads')
-                os.makedirs(upload_folder, exist_ok=True)
-                file_path = os.path.join(upload_folder, filename)
-                file.save(file_path)
-                media_urls.append(f"/static/uploads/{filename}")
+                url = save_upload(file, current_app.config['UPLOAD_FOLDER'], prefix=f"showcase_{len(media_urls)}_")
+                media_urls.append(url)
                 
         if not errors:
             new_post = ShowcasePost(
@@ -504,7 +481,7 @@ def comment_showcase(post_id):
     post = ShowcasePost.query.get_or_404(post_id)
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     
-    content = request.form.get('content', '').strip()
+    content = sanitize_plain_text(request.form.get('content', '').strip())
     if not content:
         if is_ajax:
             return jsonify({'success': False, 'error': 'Comment cannot be empty.'}), 400

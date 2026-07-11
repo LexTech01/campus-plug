@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Two-Factor Authentication - Campus Plug{% endblock %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center px-4">
+  <div class="max-w-md w-full bg-[var(--bg-secondary)] border border-[var(--color-border)] rounded-2xl p-8 shadow-xl">
+    <h1 class="font-display font-extrabold text-2xl text-[var(--text-primary)] mb-2">Two-Factor Authentication</h1>
+    <p class="text-sm text-[var(--text-secondary)] mb-6">Enter the code from your authenticator app.</p>
+    <form method="POST">
+      <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" placeholder="000000" class="w-full bg-[var(--bg-primary)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)] mb-4" required>
+      <button type="submit" class="w-full bg-[var(--color-brand)] text-white font-sans font-bold text-sm py-3 rounded-xl btn-lift">Verify</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

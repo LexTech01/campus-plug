@@ -1,4 +1,9 @@
+import os
+import secrets
+import string
+import enum
 from datetime import datetime
+from sqlalchemy import func
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -96,6 +101,7 @@ class User(db.Model, UserMixin):
     failed_login_attempts = db.Column(db.Integer, default=0, nullable=True)
     locked_until = db.Column(db.DateTime, nullable=True)
     last_seen = db.Column(db.DateTime, nullable=True)
+    totp_secret = db.Column(db.String(32), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -164,6 +170,11 @@ class Listing(db.Model):
     status = db.Column(db.String(20), default='active', index=True)  # active, sold, deleted
     removed_by_admin = db.Column(db.Boolean, default=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        db.Index('ix_listing_seller_status', 'seller_id', 'status'),
+        db.Index('ix_listing_category_status', 'category', 'status'),
+    )
     
     # Relationships
     seller = db.relationship('User', back_populates='listings')
@@ -218,6 +229,11 @@ class Gig(db.Model):
     removed_by_admin = db.Column(db.Boolean, default=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     
+    __table_args__ = (
+        db.Index('ix_gig_client_status', 'client_id', 'status'),
+        db.Index('ix_gig_category_status', 'category', 'status'),
+    )
+    
     # Relationships
     client = db.relationship('User', back_populates='gigs')
     proposals = db.relationship('Proposal', back_populates='gig', cascade='all, delete-orphan')
@@ -234,6 +250,10 @@ class Proposal(db.Model):
     message = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(25), default='pending', index=True)  # pending, accepted, rejected/declined
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.Index('ix_proposal_gig_status', 'gig_id', 'status'),
+    )
     
     # Relationships
     gig = db.relationship('Gig', back_populates='proposals')
@@ -252,6 +272,11 @@ class Offer(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    __table_args__ = (
+        db.Index('ix_offer_listing_buyer', 'listing_id', 'buyer_id'),
+        db.Index('ix_offer_buyer_status', 'buyer_id', 'status'),
+    )
+    
     listing = db.relationship('Listing', backref=db.backref('offers', cascade='all, delete-orphan'))
     buyer = db.relationship('User', backref=db.backref('offers', cascade='all, delete-orphan'))
 
@@ -286,12 +311,15 @@ class Message(db.Model):
     gig_id = db.Column(db.Integer, db.ForeignKey('gigs.id'), nullable=True, index=True)
     is_read = db.Column(db.Boolean, default=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        db.Index('ix_message_participants', 'sender_id', 'recipient_id'),
+        db.Index('ix_message_recipient_read', 'recipient_id', 'is_read'),
+    )
     
     # Relationships
     sender = db.relationship('User', foreign_keys=[sender_id])
     recipient = db.relationship('User', foreign_keys=[recipient_id])
-
-import enum
 
 class TransactionStatus(enum.Enum):
     pending_payment = 'pending_payment'
@@ -322,7 +350,7 @@ class Transaction(db.Model):
     
     paystack_reference = db.Column(db.String(100), unique=True, nullable=True)
     paystack_transfer_code = db.Column(db.String(100), nullable=True)
-
+    
     bulk_items = db.Column(db.JSON, nullable=True)  # [{"listing_id": N, "title": "...", "price": N, "quantity": N}, ...]
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
@@ -330,6 +358,12 @@ class Transaction(db.Model):
     released_at = db.Column(db.DateTime, nullable=True)
     auto_release_at = db.Column(db.DateTime, nullable=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        db.Index('ix_transaction_buyer_status', 'buyer_id', 'status'),
+        db.Index('ix_transaction_seller_status', 'seller_id', 'status'),
+        db.Index('ix_transaction_context', 'context_type', 'context_id'),
+    )
     
     # Relationships
     buyer = db.relationship('User', foreign_keys=[buyer_id], backref=db.backref('purchases_momo', lazy='dynamic'))
@@ -394,6 +428,10 @@ class Notification(db.Model):
     link = db.Column(db.String(255), nullable=True)
     is_read = db.Column(db.Boolean, default=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        db.Index('ix_notification_user_read', 'user_id', 'is_read'),
+    )
     
     # Relationships
     user = db.relationship('User', foreign_keys=[user_id])
@@ -409,6 +447,24 @@ class AdminLog(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     admin = db.relationship('User', foreign_keys=[admin_id])
+
+class AuditLog(db.Model):
+    __tablename__ = 'audit_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    action = db.Column(db.String(50), nullable=False, index=True)
+    details = db.Column(db.JSON, nullable=True)
+    ip_address = db.Column(db.String(45), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+
+
+def log_audit(user_id, action, details=None, ip_address=None):
+    log = AuditLog(user_id=user_id, action=action, details=details, ip_address=ip_address)
+    db.session.add(log)
+    db.session.commit()
 
 class ShowcasePost(db.Model):
     __tablename__ = 'showcase_posts'
@@ -461,11 +517,6 @@ class ShowcaseComment(db.Model):
 
 
 def get_top_seller_ids(limit=10):
-    """Return list of user IDs for top sellers by sales, volume, and rating.
-    
-    Uses aggregate subqueries — 3 queries total instead of 1 + 3N.
-    """
-    from sqlalchemy import func
     
     sales_agg = db.session.query(
         Transaction.seller_id,
@@ -500,9 +551,6 @@ def get_top_seller_ids(limit=10):
 
 
 def generate_referral_code():
-    """Generate a unique 8-char uppercase referral code."""
-    import secrets
-    import string
     while True:
         code = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
         if not User.query.filter_by(referral_code=code).first():

@@ -2,71 +2,131 @@
 
 {% block title %}Campus Plug - Ghana's Gen-Z Student Marketplace & Gigs Platform{% endblock %}
 
+{% block head %}
+<style>
+@keyframes bounce1 {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-30px) rotate(-3deg); }
+  100% { transform: translateY(-15px) rotate(2deg); }
+}
+@keyframes bounce2 {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-40px) rotate(3deg); }
+  100% { transform: translateY(-20px) rotate(-2deg); }
+}
+@keyframes bounce3 {
+  0% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-25px) scale(1.06); }
+  100% { transform: translateY(-35px) scale(0.94); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.uni-badge {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 12px;
+  opacity: .95;
+  border: 1px solid rgba(255,255,255,.15);
+  user-select: none;
+  will-change: transform, opacity;
+  transform-origin: center center;
+  animation: float 6.5s ease-in-out infinite alternate;
+}
+.uni-badge-logo {
+  display: block;
+  width: auto;
+  height: 20px;
+  object-fit: contain;
+}
+@media (max-width: 640px) {
+  .uni-badge { padding: 6px; }
+  .uni-badge-logo { height: 14px; }
+}
+.uni-badge:hover {
+  transform: scale(1.12) !important;
+}
+/* When a user or system requests reduced motion, the global stylesheet
+   reduces animation durations site-wide. The following targeted override
+   restores the uni-badge animation so the hero visual remains lively while
+   keeping the global reduced-motion preference intact for other elements.
+   This is intentionally scoped to `.uni-badge` only. */
+@media (prefers-reduced-motion: reduce) {
+  .uni-badge {
+    animation-duration: 6.5s !important;
+    animation-iteration-count: infinite !important;
+    transition-duration: 200ms !important;
+  }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Hero Section -->
 <section class="relative min-h-[90vh] sm:min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden">
-  <!-- Deep dark background -->
-  <div class="absolute inset-0 bg-[var(--bg-primary)] z-0"></div>
-
-  <!-- Subtle radial glow -->
-  <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_70%_50%,rgba(168,85,247,0.06),transparent)] z-0"></div>
-
-  <!-- Grid overlay -->
-  <div class="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px] z-0"></div>
-
-  <div class="max-w-7xl mx-auto w-full px-6 relative z-10 flex items-center justify-center py-28 sm:py-32 lg:py-40">
+  <!-- Hero background image -->
+  <div class="absolute inset-0 z-0 overflow-hidden">
+    <img src="{{ url_for('static', filename='images/hero/hero-bg.jpg') }}" alt="Campus life" class="w-full h-full object-cover object-[center_20%] sm:object-center scale-125 sm:scale-100" style="filter:blur(6px)">
+    <div class="absolute inset-0 bg-gradient-to-b from-black/85 via-black/75 to-black/95"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-black/40"></div>
+  </div>
+  <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 relative z-10 flex items-center justify-center py-16 sm:py-32 lg:py-40">
 
     <!-- Background Visual (positioned behind text) -->
     <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
       <!-- Outer glow ring -->
-      <div class="absolute w-[340px] h-[340px] sm:w-[480px] sm:h-[480px] lg:w-[600px] lg:h-[600px] rounded-full border border-white/[0.03]"></div>
+      <div class="absolute w-[260px] h-[260px] sm:w-[480px] sm:h-[480px] lg:w-[600px] lg:h-[600px] rounded-full border border-white/[0.03]"></div>
 
       <!-- Main gradient circle -->
-      <div class="absolute w-[300px] h-[300px] sm:w-[420px] sm:h-[420px] lg:w-[540px] lg:h-[540px] rounded-full bg-gradient-to-br from-purple-500/8 via-pink-500/5 to-amber-500/3 shadow-[0_0_160px_rgba(168,85,247,0.06)]"></div>
+      <div class="absolute w-[220px] h-[220px] sm:w-[420px] sm:h-[420px] lg:w-[540px] lg:h-[540px] rounded-full bg-gradient-to-br from-purple-500/8 via-pink-500/5 to-amber-500/3 shadow-[0_0_160px_rgba(168,85,247,0.06)]"></div>
 
       <!-- Inner accent ring -->
-      <div class="absolute w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] lg:w-[380px] lg:h-[380px] rounded-full border border-purple-500/[0.04]"></div>
+      <div class="absolute w-[150px] h-[150px] sm:w-[300px] sm:h-[300px] lg:w-[380px] lg:h-[380px] rounded-full border border-purple-500/[0.04]"></div>
 
       <!-- Floating University Badges -->
-      <div class="absolute inset-0">
-        <div class="uni-badge" style="top:12%;left:18%;background:rgba(99,102,241,0.12);backdrop-filter:blur(6px);">KNUST</div>
-        <div class="uni-badge" style="top:22%;right:14%;--delay:2s;background:rgba(168,85,247,0.10);backdrop-filter:blur(8px);">UG</div>
-        <div class="uni-badge" style="top:55%;left:12%;--delay:4s;background:rgba(52,211,153,0.10);backdrop-filter:blur(6px);">UCC</div>
-        <div class="uni-badge" style="top:15%;right:30%;--delay:1s;background:rgba(251,191,36,0.10);backdrop-filter:blur(8px);">ASHESI</div>
-        <div class="uni-badge" style="top:65%;right:15%;--delay:3s;background:rgba(244,114,182,0.10);backdrop-filter:blur(6px);">UDS</div>
-        <div class="uni-badge" style="top:75%;left:22%;--delay:2.5s;background:rgba(249,115,22,0.10);backdrop-filter:blur(6px);">UEW</div>
-        <div class="uni-badge" style="top:38%;left:28%;--delay:5s;background:rgba(99,102,241,0.08);backdrop-filter:blur(8px);">UPSA</div>
-        <div class="uni-badge" style="top:8%;left:42%;--delay:4.5s;background:rgba(34,211,238,0.08);backdrop-filter:blur(8px);">GIMPA</div>
-        <div class="uni-badge" style="top:80%;right:25%;--delay:1.5s;background:rgba(168,85,247,0.08);backdrop-filter:blur(6px);">TTU</div>
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="uni-badge" style="animation:bounce1 3.5s ease-in-out 0s infinite alternate, float 6.5s ease-in-out 0s infinite alternate;top:12%;left:18%;background:rgba(99,102,241,0.25);backdrop-filter:blur(2px);"><img src="{{ url_for('static', filename='images/uni-logos/knust-logo.png') }}" alt="KNUST" class="uni-badge-logo"></div>
+        <div class="uni-badge" style="animation:bounce2 4.2s ease-in-out 1.5s infinite alternate, float 7.2s ease-in-out 0s infinite alternate;top:22%;right:14%;background:rgba(168,85,247,0.25);backdrop-filter:blur(2px);"><img src="{{ url_for('static', filename='images/uni-logos/ug-logo.svg') }}" alt="UG" class="uni-badge-logo"></div>
+        <div class="uni-badge" style="animation:bounce3 3.8s ease-in-out 3s infinite alternate, float 6.8s ease-in-out 0s infinite alternate;top:55%;left:12%;background:rgba(52,211,153,0.20);backdrop-filter:blur(2px);"><img src="{{ url_for('static', filename='images/uni-logos/ucc-logo.png') }}" alt="UCC" class="uni-badge-logo"></div>
+        <div class="uni-badge" style="animation:bounce1 4.5s ease-in-out 0.8s infinite alternate, float 7s ease-in-out 0s infinite alternate;top:15%;right:30%;background:rgba(251,191,36,0.20);backdrop-filter:blur(2px);"><img src="{{ url_for('static', filename='images/uni-logos/ashesi-logo.png') }}" alt="ASHESI" class="uni-badge-logo" style="filter:brightness(0)invert(1)"></div>
+        <div class="uni-badge" style="animation:bounce2 3.2s ease-in-out 2.5s infinite alternate, float 6.3s ease-in-out 0s infinite alternate;top:65%;right:15%;background:rgba(244,114,182,0.20);backdrop-filter:blur(2px);"><img src="{{ url_for('static', filename='images/uni-logos/uds-logo.png') }}" alt="UDS" class="uni-badge-logo"></div>
+        <div class="uni-badge" style="animation:bounce3 4.8s ease-in-out 0.3s infinite alternate, float 7.5s ease-in-out 0s infinite alternate;top:75%;left:22%;background:rgba(249,115,22,0.20);backdrop-filter:blur(2px);"><img src="{{ url_for('static', filename='images/uni-logos/uew-logo.png') }}" alt="UEW" class="uni-badge-logo"></div>
+        <div class="uni-badge" style="animation:bounce1 3.6s ease-in-out 4s infinite alternate, float 6.7s ease-in-out 0s infinite alternate;top:38%;left:28%;background:rgba(99,102,241,0.20);backdrop-filter:blur(2px);"><img src="{{ url_for('static', filename='images/uni-logos/upsa-logo.png') }}" alt="UPSA" class="uni-badge-logo" style="filter:brightness(0)invert(1)"></div>
+        <div class="uni-badge" style="animation:bounce2 4s ease-in-out 2s infinite alternate, float 7.1s ease-in-out 0s infinite alternate;top:8%;left:42%;background:rgba(34,211,238,0.20);backdrop-filter:blur(2px);"><img src="{{ url_for('static', filename='images/uni-logos/gimpa-logo.png') }}" alt="GIMPA" class="uni-badge-logo"></div>
+        <div class="uni-badge" style="animation:bounce3 3.3s ease-in-out 1.2s infinite alternate, float 6.4s ease-in-out 0s infinite alternate;top:80%;right:25%;background:rgba(168,85,247,0.20);backdrop-filter:blur(2px);"><img src="{{ url_for('static', filename='images/uni-logos/ttu-logo.png') }}" alt="TTU" class="uni-badge-logo" style="filter:brightness(0)invert(1)"></div>
       </div>
 
 
     </div>
 
     <!-- Centered Text Content (above background visual) -->
-    <div class="relative z-10 text-center max-w-2xl mx-auto">
+    <div class="relative z-10 text-center max-w-2xl mx-auto bg-black/20 backdrop-blur-lg rounded-[28px] border-none shadow-none px-6 py-8 sm:px-10 sm:py-10">
       <!-- Trust Tag -->
-      <div data-aos="fade-up" data-aos-delay="100" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] shadow-md mb-8 sm:mb-10 hover:scale-105 transition-all-smooth cursor-default">
+      <div data-aos="fade-up" data-aos-delay="100" class="inline-flex items-center gap-1 px-2.5 sm:gap-1.5 sm:px-3 py-1.5 rounded-full bg-black/60 border border-white/20 shadow-md mb-6 sm:mb-10 hover:scale-105 transition-all-smooth cursor-default backdrop-blur-sm">
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span class="font-mono text-[8px] sm:text-[10px] uppercase font-bold tracking-wider text-[var(--text-secondary)]">Live Across 10 Ghanaian Universities</span>
+        <span class="font-mono text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-white">Live Across 10 Ghanaian Universities</span>
       </div>
 
       <!-- Headline -->
-      <h1 data-aos="fade-up" data-aos-delay="200" class="font-display font-extrabold text-[2rem] sm:text-5xl md:text-6xl lg:text-[4rem] tracking-tight leading-[1.05] mb-6 sm:mb-8 text-[var(--text-primary)]">
+      <h1 data-aos="fade-up" data-aos-delay="200" class="font-display font-extrabold tracking-tight mb-5 sm:mb-8 text-white" style="font-size:clamp(2.25rem,6.8vw,4.5rem);line-height:1.03;text-shadow:0 4px 30px rgba(0,0,0,0.8),0 1px 8px rgba(0,0,0,0.6);">
         Buy, Sell &amp;
         <span class="bg-gradient-to-r from-emerald-400 via-purple-400 to-amber-400 bg-clip-text text-transparent">Hustle</span> on<br class="hidden sm:block"> Campus
       </h1>
 
-      <p data-aos="fade-up" data-aos-delay="300" class="max-w-lg mx-auto font-sans text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed mb-10 sm:mb-12">
+      <p data-aos="fade-up" data-aos-delay="300" class="max-w-lg mx-auto font-sans text-sm sm:text-base text-white font-semibold leading-relaxed mb-8 sm:mb-12 px-2 sm:px-0" style="text-shadow:0 2px 20px rgba(0,0,0,0.7)">
         Trade textbooks, electronics, and fashion peer-to-peer. Find gigs like tutoring and delivery. All secured with MoMo escrow.
       </p>
 
       <!-- CTAs -->
-      <div data-aos="fade-up" data-aos-delay="400" class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12 sm:mb-16">
-        <a href="{{ url_for('marketplace.browse') }}" class="w-full sm:w-fit px-8 py-3.5 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-sm shadow-xl btn-lift btn-glow flex items-center justify-center gap-2">
+      <div data-aos="fade-up" data-aos-delay="400" class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-10 sm:mt-0 mb-12 sm:mb-16">
+        <a href="{{ url_for('marketplace.browse') }}" class="w-fit sm:w-fit px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl bg-[var(--color-brand)] text-white font-sans font-bold text-sm shadow-xl btn-lift btn-glow flex items-center justify-center gap-2">
           <i data-lucide="tag" class="w-4 h-4"></i> Marketplace
         </a>
-        <a href="{{ url_for('freelance.browse') }}" class="w-full sm:w-fit px-8 py-3.5 rounded-xl bg-transparent text-emerald-400 font-sans font-bold text-sm border border-emerald-500/20 hover:bg-emerald-500/5 hover:scale-105 transition-all-smooth flex items-center justify-center gap-2">
+        <a href="{{ url_for('freelance.browse') }}" class="w-fit sm:w-fit px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl bg-black/50 text-white font-sans font-bold text-sm border border-white/25 hover:bg-black/60 hover:scale-105 transition-all-smooth flex items-center justify-center gap-2 shadow-xl" style="text-shadow:0 1px 8px rgba(0,0,0,0.5)">
           <i data-lucide="play" class="w-4 h-4"></i> Explore Gigs
         </a>
       </div>
@@ -75,6 +135,33 @@
     </div>
   </div>
 </section>
+
+<script>
+// Randomize starting positions and animation delays for uni badges
+document.addEventListener('DOMContentLoaded', function () {
+  const badges = Array.from(document.querySelectorAll('.uni-badge'));
+  if (!badges.length) return;
+  const container = badges[0].parentElement; // badges are direct children of the absolute container
+  badges.forEach((b, i) => {
+    // random top 5% - 82%
+    const top = Math.floor(Math.random() * 78) + 5;
+    // random left 6% - 88%
+    const left = Math.floor(Math.random() * 82) + 6;
+    b.style.top = top + '%';
+    b.style.left = left + '%';
+    b.style.right = 'auto';
+
+    // set two staggered delays so the combined animations feel organic
+    const d1 = (Math.random() * 3).toFixed(2);
+    const d2 = (Math.random() * 4).toFixed(2);
+    b.style.animationDelay = `${d1}s, ${d2}s`;
+
+    // tiny random opacity and scale variance (kept subtle)
+    const op = 0.88 + Math.random() * 0.12;
+    b.style.opacity = op;
+  });
+});
+</script>
 
 <!-- Dual Platform: How it works side-by-side -->
 <section id="how-it-works" class="max-w-7xl mx-auto px-6 py-24 border-t border-[var(--color-border)] relative section-divider">
@@ -399,3 +486,5 @@
 </section>
 
 {% endblock %}
+
+{% block scripts %}{% endblock %}

@@ -166,7 +166,8 @@
     async function resolveLocation(str) {
       const coord = parseCoord(str);
       if (coord) return coord;
-      const res = await fetch(`/map/geocode?q=${encodeURIComponent(str + ', Ghana')}`);
+      const q = str.toLowerCase().includes('ghana') ? str : str + ', Ghana';
+      const res = await fetch(`/map/geocode?q=${encodeURIComponent(q)}`);
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error || 'Could not find location');

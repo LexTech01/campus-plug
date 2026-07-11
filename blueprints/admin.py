@@ -1,8 +1,8 @@
 from functools import wraps
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort
 from flask_login import login_required, current_user
-from sqlalchemy import update as sa_update
-from models import db, User, Listing, Gig, Transaction, TransactionStatus, TransactionLog, Review, Notification, AdminLog
+from sqlalchemy import update as sa_update, func
+from models import db, User, Listing, Gig, Transaction, TransactionStatus, TransactionLog, Review, Notification, AdminLog, UNIVERSITIES
 from datetime import datetime
 from blueprints.payments import create_paystack_transfer_recipient, initiate_paystack_transfer, initiate_paystack_refund, prompt_reviews_for_transaction
 
@@ -57,13 +57,10 @@ def dashboard():
     # Get recent admin action logs
     recent_logs = AdminLog.query.order_by(AdminLog.created_at.desc()).limit(5).all()
     
-    # Campus Node distribution (for UI) — 3 GROUP BY queries instead of 3N
-    from sqlalchemy import func
     user_counts = dict(db.session.query(User.university, func.count(User.id)).group_by(User.university).all())
     listing_counts = dict(db.session.query(Listing.university, func.count(Listing.id)).filter(Listing.removed_by_admin == False).group_by(Listing.university).all())
     gig_counts = dict(db.session.query(Gig.university, func.count(Gig.id)).filter(Gig.removed_by_admin == False).group_by(Gig.university).all())
     
-    from models import UNIVERSITIES
     node_metrics = []
     for uni in UNIVERSITIES:
         node_metrics.append({
@@ -73,7 +70,6 @@ def dashboard():
             'gig_count': gig_counts.get(uni, 0)
         })
         
-    from datetime import datetime
     return render_template(
         'admin/dashboard.html',
         metrics=metrics,

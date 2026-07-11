@@ -10,23 +10,9 @@
   <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
   
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-            display: ['Sora', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          }
-        }
-      }
-    }
-  </script>
-
+  <!-- Compiled Tailwind CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
+  
   <!-- Custom design token variables and micro-interactions -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   
@@ -35,17 +21,11 @@
   
   {% block head %}{% endblock %}
 
+  <!-- CSRF token for AJAX requests -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
   <!-- Prevent flash of dark/light theme -->
-  <script>
-    (function () {
-      const savedTheme = localStorage.getItem('theme');
-      if (savedTheme === 'light') {
-        document.documentElement.classList.remove('dark');
-      } else {
-        document.documentElement.classList.add('dark');
-      }
-    })();
-  </script>
+  <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
 </head>
 <body class="bg-[var(--bg-primary)] text-[var(--text-primary)] relative min-h-screen flex flex-col antialiased">
   
@@ -431,21 +411,7 @@
   <script src="/static/js/animations.js"></script>
   <script src="/static/js/filters.js"></script>
   <script src="/static/js/toasts.js"></script>
-  
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (typeof lucide !== 'undefined') lucide.createIcons();
-    });
-  </script>
-  
-  {% if current_user.is_authenticated %}
-  <script>
-    // Heartbeat — updates last_seen every 2 minutes
-    setInterval(() => {
-      fetch('/auth/heartbeat', { method: 'POST', cache: 'no-store' });
-    }, 120000);
-  </script>
-  {% endif %}
+  <script src="/static/js/app-init.js"></script>
   
   {% block scripts %}{% endblock %}
 </body>

@@ -3,18 +3,25 @@ import re
 import secrets
 import random
 import time
-from io import BytesIO
 from datetime import datetime, timedelta
 from sqlalchemy.exc import IntegrityError
-from markupsafe import escape
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
-from models import db, User, Listing, Gig, Notification, UNIVERSITIES, MOMO_PROVIDERS, generate_referral_code
+from models import db, User, Listing, Gig, Notification, UNIVERSITIES, MOMO_PROVIDERS, generate_referral_code, log_audit
+
+try:
+    import pyotp
+    import qrcode
+    from io import BytesIO
+    import base64
+    HAS_2FA = True
+except ImportError:
+    pyotp = qrcode = BytesIO = base64 = None
+    HAS_2FA = False
 from urllib.parse import urlparse
-from werkzeug.utils import secure_filename
-from PIL import Image
 from mail import send_email
-from utils import rate_limit
+from utils import rate_limit, sanitize_plain_text
+from image_utils import allowed_file, validate_image_content, validate_image_size, save_upload
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -35,13 +42,13 @@ def register():
     if request.method == 'POST':
         # Retrieve form data
         email = request.form.get('email', '').strip().lower()
-        full_name = request.form.get('full_name', '').strip()
+        full_name = sanitize_plain_text(request.form.get('full_name', '').strip())
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
         university = request.form.get('university', '')
         phone = request.form.get('phone', '').strip()
         momo_provider = request.form.get('momo_provider', '')
-        bio = request.form.get('bio', '').strip()[:500]
+        bio = sanitize_plain_text(request.form.get('bio', '').strip()[:500])
         account_type = request.form.get('account_type', 'regular')
         referral_code_input = request.form.get('referral_code', '').strip().upper()[:8]
         
@@ -111,8 +118,6 @@ def register():
                 referred_by = User.query.filter_by(referral_code=referral_code_input).first()
                 if not referred_by:
                     errors['referral_code'] = 'Invalid referral code'
-                elif referred_by.id == current_app.config.get('REFERRAL_SELF', True) and False:
-                    pass  # handled below
                     
         if not errors:
             # Create User
@@ -140,6 +145,7 @@ def register():
                 return render_template('auth/signup.html', errors=errors, form_data=form_data)
             
             login_user(new_user)
+            log_audit(new_user.id, 'register', {'account_type': account_type}, request.remote_addr)
             flash('Success! Account created and logged in.', 'success')
 
             try:
@@ -240,10 +246,16 @@ def login():
                 db.session.commit()
                 if user.is_suspended:
                     errors['general'] = 'Your account has been suspended by an administrator.'
+                elif HAS_2FA and user.totp_secret:
+                    session['2fa_user_id'] = user.id
+                    session['2fa_remember'] = remember
+                    return redirect(url_for('auth.verify_2fa'))
                 else:
                     if not user.email_verified:
                         flash('Please verify your email address to access all features.', 'warning')
+                    session.permanent = True
                     login_user(user, remember=remember)
+                    log_audit(user.id, 'login', {'remember': remember}, request.remote_addr)
                     flash(f'Welcome back, {user.full_name}!', 'success')
 
                     # Send daily recommendations if 24h have passed
@@ -269,6 +281,7 @@ def login():
 @auth_bp.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
+    log_audit(current_user.id, 'logout', None, request.remote_addr)
     logout_user()
     flash('You have been logged out successfully.', 'info')
     return redirect(url_for('index'))
@@ -420,11 +433,11 @@ def settings():
     }
 
     if request.method == 'POST':
-        full_name = request.form.get('full_name', '').strip()
+        full_name = sanitize_plain_text(request.form.get('full_name', '').strip())
         university = request.form.get('university', '')
         phone = request.form.get('phone', '').strip()
         momo_provider = request.form.get('momo_provider', '')
-        bio = request.form.get('bio', '').strip()
+        bio = sanitize_plain_text(request.form.get('bio', '').strip())
         lat_str = request.form.get('latitude', '').strip()
         lng_str = request.form.get('longitude', '').strip()
         location_name = request.form.get('location_name', '').strip()
@@ -472,44 +485,94 @@ def settings():
             current_user.bio = bio
             current_user.latitude = latitude
             current_user.longitude = longitude
-            from markupsafe import escape
-            current_user.location_name = escape(location_name) if location_name else None
+            current_user.location_name = sanitize_plain_text(location_name) if location_name else None
 
             avatar_file = request.files.get('avatar')
             if avatar_file and avatar_file.filename:
-                ext = avatar_file.filename.rsplit('.', 1)[1].lower() if '.' in avatar_file.filename else ''
-                if ext not in current_app.config['ALLOWED_EXTENSIONS']:
+                if not allowed_file(avatar_file.filename):
                     errors['avatar'] = 'Allowed file formats: PNG, JPG, JPEG, WEBP'
+                elif not validate_image_size(avatar_file):
+                    errors['avatar'] = 'Avatar must be less than 5 MB'
+                elif not validate_image_content(avatar_file):
+                    errors['avatar'] = 'File is not a valid image'
                 else:
-                    avatar_file.seek(0, 2)
-                    size_bytes = avatar_file.tell()
-                    avatar_file.seek(0)
-                    if size_bytes > 5 * 1024 * 1024:
-                        errors['avatar'] = 'Avatar must be less than 5 MB'
-                    else:
-                        try:
-                            from PIL import Image
-                            # Decompression bomb protection
-                            Image.MAX_IMAGE_PIXELS = 50_000_000
-                            img = Image.open(avatar_file)
-                            img.verify()
-                            avatar_file.seek(0)
-                        except Exception:
-                            errors['avatar'] = 'File is not a valid image'
-
-                if 'avatar' not in errors:
-                    filename = secure_filename(avatar_file.filename)
-                    filename = f"avatar_{current_user.id}_{int(time.time())}_{filename}"
-                    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-                    avatar_file.save(file_path)
-                    current_user.avatar = f"/static/uploads/{filename}"
+                    url = save_upload(avatar_file, current_app.config['UPLOAD_FOLDER'], prefix=f"avatar_{current_user.id}_")
+                    current_user.avatar = url
 
             if not errors:
                 db.session.commit()
+                log_audit(current_user.id, 'profile_update', {'university': university, 'phone': phone}, request.remote_addr)
                 flash('Profile updated successfully.', 'success')
                 return redirect(url_for('auth.settings'))
 
     return render_template('auth/settings.html', errors=errors, form_data=form_data)
+
+
+@auth_bp.route('/2fa/verify', methods=['GET', 'POST'])
+def verify_2fa():
+    if '2fa_user_id' not in session:
+        return redirect(url_for('auth.login'))
+    user = User.query.get(session['2fa_user_id'])
+    if not user or not user.totp_secret:
+        return redirect(url_for('auth.login'))
+
+    if request.method == 'POST':
+        code = request.form.get('code', '').strip()
+        totp = pyotp.TOTP(user.totp_secret)
+        if totp.verify(code):
+            remember = session.pop('2fa_remember', False)
+            session.pop('2fa_user_id', None)
+            session.permanent = True
+            login_user(user, remember=remember)
+            log_audit(user.id, 'login_2fa', None, request.remote_addr)
+            flash(f'Welcome back, {user.full_name}!', 'success')
+            return redirect(url_for('index'))
+        flash('Invalid 2FA code. Please try again.', 'danger')
+    return render_template('auth/verify_2fa.html')
+
+
+@auth_bp.route('/2fa/setup', methods=['GET', 'POST'])
+@login_required
+def setup_2fa():
+    if not HAS_2FA:
+        flash('2FA libraries not installed. Run: pip install pyotp qrcode[pil]', 'warning')
+        return redirect(url_for('auth.settings'))
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'enable':
+            code = request.form.get('code', '').strip()
+            temp_secret = session.get('2fa_temp_secret')
+            if not temp_secret:
+                flash('Session expired. Please try again.', 'danger')
+                return redirect(url_for('auth.setup_2fa'))
+            totp = pyotp.TOTP(temp_secret)
+            if totp.verify(code):
+                current_user.totp_secret = temp_secret
+                db.session.commit()
+                session.pop('2fa_temp_secret', None)
+                log_audit(current_user.id, '2fa_enabled', None, request.remote_addr)
+                flash('Two-factor authentication enabled successfully.', 'success')
+                return redirect(url_for('auth.settings'))
+            flash('Invalid code. Please try again.', 'danger')
+        elif action == 'disable':
+            current_user.totp_secret = None
+            db.session.commit()
+            log_audit(current_user.id, '2fa_disabled', None, request.remote_addr)
+            flash('Two-factor authentication disabled.', 'success')
+            return redirect(url_for('auth.settings'))
+
+    secret = pyotp.random_base32()
+    session['2fa_temp_secret'] = secret
+    totp = pyotp.TOTP(secret)
+    provisioning_uri = totp.provisioning_uri(current_user.email, issuer_name='Campus Plug')
+
+    buf = BytesIO()
+    qr = qrcode.make(provisioning_uri)
+    qr.save(buf, format='PNG')
+    qr_b64 = base64.b64encode(buf.getvalue()).decode()
+
+    return render_template('auth/setup_2fa.html', secret=secret, qr_b64=qr_b64, enabled=bool(current_user.totp_secret))
 
 
 @auth_bp.route('/user/<int:user_id>')
@@ -580,6 +643,7 @@ def forgot_password():
 
 
 @auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+@rate_limit('reset_password', max_attempts=5, window=300)
 def reset_password(token):
     if current_user.is_authenticated:
         return redirect(url_for('index'))
@@ -617,6 +681,7 @@ def reset_password(token):
             user.password_reset_token = None
             user.password_reset_expires_at = None
             db.session.commit()
+            log_audit(user.id, 'password_reset', None, request.remote_addr)
             flash('Password reset successfully. Please sign in.', 'success')
             return redirect(url_for('auth.login'))
 

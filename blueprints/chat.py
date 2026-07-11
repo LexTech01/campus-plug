@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from models import db, User, Message, Listing, Gig, Notification
 from sqlalchemy import or_, and_
 from datetime import datetime
-from utils import rate_limit
+from utils import rate_limit, sanitize_plain_text
 
 chat_bp = Blueprint('chat', __name__)
 
@@ -133,7 +133,7 @@ def thread_view(other_id):
 @rate_limit('send_message', max_attempts=20, window=60)
 def send_message():
     recipient_id = request.form.get('recipient_id', type=int)
-    body = request.form.get('body', '').strip()
+    body = sanitize_plain_text(request.form.get('body', '').strip())
     context_type = request.form.get('context_type', 'general')
     context_id = request.form.get('context_id', type=int)
     

@@ -7,11 +7,12 @@ import urllib.request
 import urllib.error
 import urllib.parse
 from datetime import datetime, timedelta
-from sqlalchemy import text, update as sa_update
+from sqlalchemy import text, update as sa_update, func
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, jsonify
 from flask_login import login_required, current_user
 from extensions import csrf
 from models import db, User, Listing, Gig, Offer, Transaction, Proposal, Notification, TransactionStatus, Review, CartItem
+from utils import sanitize_plain_text
 
 payments_bp = Blueprint('payments', __name__)
 
@@ -614,7 +615,6 @@ def release_funds(transaction_id):
         
         txn.paystack_transfer_code = transfer_code
         
-        from models import TransactionLog
         log = TransactionLog(
             transaction_id=txn.id,
             old_status=TransactionStatus.held_in_escrow.value,
@@ -772,13 +772,6 @@ AUTO_RELEASE_DAYS = 7
 
 
 def auto_release_expired_transactions():
-    """
-    Auto-release escrow funds for transactions past their auto_release_at date.
-    Called periodically from /health endpoint.
-    """
-    from models import Transaction, TransactionLog, Notification, User, TransactionStatus
-    from sqlalchemy import update as sa_update
-
     now = datetime.utcnow()
     expired = Transaction.query.filter(
         Transaction.status == TransactionStatus.held_in_escrow,
@@ -904,7 +897,7 @@ def submit_review(transaction_id):
     if request.method == 'POST':
         try:
             rating_val = int(request.form.get('rating', 5))
-            comment = request.form.get('comment', '').strip()
+            comment = sanitize_plain_text(request.form.get('comment', '').strip())
             
             if rating_val < 1 or rating_val > 5:
                 flash("Please submit a rating between 1 and 5 stars.", "danger")
