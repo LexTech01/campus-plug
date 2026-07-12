@@ -4,7 +4,7 @@ import resend
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_FROM = 'Campus Plug <noreply@campusplug.com>'
+DEFAULT_FROM = os.environ.get('EMAIL_FROM', 'Campus Plug <noreply@onboarding.resend.dev>')
 
 def _init():
     api_key = os.environ.get('RESEND_API_KEY')

@@ -363,10 +363,24 @@ def create_app():
                     memory_mb = round(int(result.stdout.strip()) / 1024, 1)
             except Exception:
                 pass
+
+            resend_status = 'not_configured'
+            resend_key = os.environ.get('RESEND_API_KEY', '')
+            if resend_key:
+                if resend_key.startswith('re_'):
+                    resend_status = 'configured'
+                else:
+                    resend_status = 'invalid_format'
+
             return jsonify({
                 'status': 'healthy',
                 'database': {'status': 'ok', 'latency_ms': db_latency},
                 'redis': {'status': 'connected' if r else 'unavailable', 'latency_ms': redis_latency},
+                'email': {
+                    'provider': 'resend',
+                    'api_key': resend_status,
+                    'from': 'noreply@campusplug.com',
+                },
                 'uptime': dt_module.utcnow().isoformat(),
                 'python': platform.python_version(),
                 'memory_mb': memory_mb,
