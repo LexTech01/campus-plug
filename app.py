@@ -372,6 +372,8 @@ def create_app():
                 else:
                     resend_status = 'invalid_format'
 
+            from mail import DEFAULT_FROM as email_from
+
             return jsonify({
                 'status': 'healthy',
                 'database': {'status': 'ok', 'latency_ms': db_latency},
@@ -379,7 +381,7 @@ def create_app():
                 'email': {
                     'provider': 'resend',
                     'api_key': resend_status,
-                    'from': 'noreply@campusplug.com',
+                    'from': email_from,
                 },
                 'uptime': dt_module.utcnow().isoformat(),
                 'python': platform.python_version(),
