@@ -88,6 +88,17 @@
                     {% if user.is_suspended %}Reactivate Account{% else %}Suspend Account{% endif %}
                   </button>
                 </form>
+
+                <div class="h-px bg-[var(--color-border)] my-4"></div>
+
+                <p class="font-bold text-sm text-[var(--text-primary)] mb-2">Verification Badge</p>
+                <p class="text-xs text-[var(--text-secondary)] mb-3">{% if user.is_verified %}Remove the verified badge from this user.{% else %}Mark this user as a trusted, verified member.{% endif %}</p>
+                <form action="{{ url_for('admin.toggle_verify_user', user_id=user.id) }}" method="POST">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="w-full py-2 rounded-lg font-bold text-xs {% if user.is_verified %}bg-amber-500 text-white hover:bg-amber-600{% else %}bg-blue-600 text-white hover:bg-blue-700{% endif %} transition">
+                    {% if user.is_verified %}Remove Verified Badge{% else %}Mark as Verified{% endif %}
+                  </button>
+                </form>
               </div>
               {% endif %}
             </div>

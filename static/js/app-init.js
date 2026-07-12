@@ -14,6 +14,28 @@ document.addEventListener('DOMContentLoaded', function () {
   setInterval(function () {
     fetch('/auth/heartbeat', { method: 'POST', cache: 'no-store' }).catch(function () {});
   }, 120000);
+
+  var passwordToggleButtons = document.querySelectorAll('.password-toggle');
+  passwordToggleButtons.forEach(function (button) {
+    button.addEventListener('click', function () {
+      var fieldWrapper = button.closest('.password-field');
+      if (!fieldWrapper) return;
+      var input = fieldWrapper.querySelector('input[type="password"], input[type="text"]');
+      if (!input) return;
+
+      var isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+      button.dataset.visible = isPassword ? 'true' : 'false';
+      var icon = button.querySelector('i');
+      if (icon) {
+        icon.dataset.lucide = isPassword ? 'eye-off' : 'eye';
+        if (typeof lucide !== 'undefined') {
+          lucide.replace();
+        }
+      }
+    });
+  });
 });
 
 (function () {

@@ -3,7 +3,7 @@ services:
     name: campus-plug
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn wsgi:application --bind 0.0.0.0:$PORT --workers 4 --timeout 120 --access-logfile -
+    startCommand: gunicorn wsgi:application --bind 0.0.0.0:$PORT --workers 4 --threads 2 --worker-class gthread --timeout 60 --keep-alive 5 --max-requests 1000 --max-requests-jitter 100 --access-logfile -
     envVars:
       - key: FLASK_ENV
         value: production
@@ -13,6 +13,8 @@ services:
         fromDatabase:
           name: campus-plug-db
           property: connectionString
+      - key: REDIS_URL
+        sync: false
       - key: APP_URL
         value: https://campus-plug-6f51.onrender.com
       - key: RESEND_API_KEY

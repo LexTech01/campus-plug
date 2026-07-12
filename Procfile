@@ -1,1 +1,1 @@
-web: gunicorn wsgi:application --bind 0.0.0.0:$PORT --workers 4 --timeout 120 --access-logfile -
+web: gunicorn wsgi:application --bind 0.0.0.0:$PORT --workers 4 --threads 2 --worker-class gthread --timeout 60 --keep-alive 5 --max-requests 1000 --max-requests-jitter 100 --access-logfile - --access-logformat '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(D)s'

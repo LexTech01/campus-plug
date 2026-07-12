@@ -89,6 +89,13 @@
               {% endif %}
             </div>
             <p class="font-sans text-[10px] text-[var(--text-secondary)] mt-0.5">Member of <span class="font-semibold text-purple-400">{{ gig.client.university }}</span></p>
+            {% if current_user.is_authenticated and current_user.id != gig.client_id %}
+            <div class="mt-1">
+              {% with target_type='gig', target_id=gig.id, target_label='Gig' %}
+                {% include 'reports/report_modal.html' %}
+              {% endwith %}
+            </div>
+            {% endif %}
           </div>
         </div>
         

@@ -51,7 +51,15 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///campus_plug.db'
+    _dev_url = os.environ.get('DATABASE_URL') or 'sqlite:///campus_plug.db'
+    SQLALCHEMY_DATABASE_URI = _dev_url
+    if _dev_url.startswith('postgresql://') or _dev_url.startswith('postgres://'):
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            'pool_size': 10,
+            'max_overflow': 20,
+            'pool_pre_ping': True,
+            'pool_recycle': 300,
+        }
     SESSION_COOKIE_SECURE = False
     WTF_CSRF_ENABLED = True
 
@@ -59,7 +67,7 @@ class DevelopmentConfig(Config):
         'default-src': "'self'",
         'script-src': "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://js.paystack.co https://unpkg.com",
         'style-src': "'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
-        'img-src': "'self' data: https:",
+        'img-src': "'self' data: blob: https:",
         'font-src': "'self' https://fonts.gstatic.com",
         'connect-src': "'self' https://api.paystack.co https://nominatim.openstreetmap.org https://router.project-osrm.org",
         'frame-src': "'self' https://js.paystack.co",
@@ -71,7 +79,16 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     _db_url = (os.environ.get('DATABASE_URL') or '').strip()
-    SQLALCHEMY_DATABASE_URI = _db_url.replace('postgres://', 'postgresql://', 1) if _db_url else ''
+    _normalized_url = _db_url.replace('postgres://', 'postgresql://', 1) if _db_url else ''
+    SQLALCHEMY_DATABASE_URI = _normalized_url
+    if _normalized_url.startswith('postgresql://'):
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            'pool_size': 20,
+            'max_overflow': 40,
+            'pool_pre_ping': True,
+            'pool_recycle': 300,
+            'pool_use_lifo': True,
+        }
     SESSION_COOKIE_SECURE = True
     WTF_CSRF_ENABLED = True
 
@@ -79,7 +96,7 @@ class ProductionConfig(Config):
         'default-src': "'self'",
         'script-src': "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://js.paystack.co https://unpkg.com",
         'style-src': "'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
-        'img-src': "'self' data: https:",
+        'img-src': "'self' data: blob: https:",
         'font-src': "'self' https://fonts.gstatic.com",
         'connect-src': "'self' https://api.paystack.co https://nominatim.openstreetmap.org https://router.project-osrm.org",
         'frame-src': "'self' https://js.paystack.co",

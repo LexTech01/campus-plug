@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, text, MetaData
 
 def migrate(sqlite_path, pg_url):
     sqlite_engine = create_engine(f'sqlite:///{sqlite_path}')
-    pg_engine = create_engine(pg_url, pool_pre_ping=True)
+    pg_engine = create_engine(pg_url, pool_pre_ping=True, connect_args={'sslmode': 'require'} if 'supabase' in pg_url.lower() else {})
 
     metadata = MetaData()
     metadata.reflect(bind=sqlite_engine)
@@ -112,4 +112,5 @@ if __name__ == '__main__':
         sys.exit(1)
 
     print(f"Migrating from {sqlite_path} to PostgreSQL...")
+    print(f"Target: {pg_url[:30]}... (password hidden)")
     migrate(sqlite_path, pg_url)

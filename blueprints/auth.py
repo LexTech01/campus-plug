@@ -3,6 +3,7 @@ import re
 import secrets
 import random
 import time
+import hashlib
 from datetime import datetime, timedelta
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, session
@@ -372,17 +373,23 @@ def notifications():
     )
 
 
-@auth_bp.route('/upgrade-seller')
+@auth_bp.route('/upgrade-seller', methods=['GET', 'POST'])
 @login_required
 def upgrade_seller():
     if current_user.account_type == 'admin':
         flash('Admin accounts have full access across the platform.', 'info')
-    elif current_user.account_type == 'seller':
+        return redirect(url_for('auth.settings'))
+    if current_user.account_type == 'seller':
         flash('You are already a seller.', 'info')
-    else:
-        current_user.account_type = 'seller'
-        db.session.commit()
-        flash('Account upgraded to Seller! You can now create marketplace listings.', 'success')
+        return redirect(url_for('auth.settings'))
+    if request.method == 'GET':
+        return render_template('auth/upgrade_seller.html')
+    if not current_user.email_verified:
+        flash('Please verify your email address before upgrading to a seller account.', 'warning')
+        return redirect(url_for('auth.settings'))
+    current_user.account_type = 'seller'
+    db.session.commit()
+    flash('Account upgraded to Seller! You can now create marketplace listings.', 'success')
     return redirect(url_for('auth.settings'))
 
 
@@ -509,6 +516,7 @@ def settings():
 
 
 @auth_bp.route('/2fa/verify', methods=['GET', 'POST'])
+@rate_limit('verify_2fa', max_attempts=5, window=300)
 def verify_2fa():
     if '2fa_user_id' not in session:
         return redirect(url_for('auth.login'))
@@ -533,6 +541,7 @@ def verify_2fa():
 
 @auth_bp.route('/2fa/setup', methods=['GET', 'POST'])
 @login_required
+@rate_limit('setup_2fa', max_attempts=10, window=300)
 def setup_2fa():
     if not HAS_2FA:
         flash('2FA libraries not installed. Run: pip install pyotp qrcode[pil]', 'warning')
@@ -573,6 +582,18 @@ def setup_2fa():
     qr_b64 = base64.b64encode(buf.getvalue()).decode()
 
     return render_template('auth/setup_2fa.html', secret=secret, qr_b64=qr_b64, enabled=bool(current_user.totp_secret))
+
+
+@auth_bp.route('/account/delete', methods=['POST'])
+@login_required
+def delete_account():
+    if request.method == 'POST':
+        user = current_user._get_current_object()
+        logout_user()
+        db.session.delete(user)
+        db.session.commit()
+        flash('Your account has been permanently deleted.', 'info')
+    return redirect(url_for('index'))
 
 
 @auth_bp.route('/user/<int:user_id>')
@@ -622,7 +643,8 @@ def forgot_password():
             user = User.query.filter_by(email=email).first()
             if user:
                 token = secrets.token_urlsafe(32)
-                user.password_reset_token = token
+                token_hash = hashlib.sha256(token.encode()).hexdigest()
+                user.password_reset_token = token_hash
                 user.password_reset_expires_at = datetime.utcnow() + timedelta(hours=1)
                 db.session.commit()
 
@@ -648,7 +670,8 @@ def reset_password(token):
     if current_user.is_authenticated:
         return redirect(url_for('index'))
 
-    user = User.query.filter_by(password_reset_token=token).first()
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    user = User.query.filter_by(password_reset_token=token_hash).first()
     if not user or not user.password_reset_expires_at or datetime.utcnow() > user.password_reset_expires_at:
         flash('This reset link is invalid or has expired.', 'danger')
         return redirect(url_for('auth.forgot_password'))

@@ -119,6 +119,13 @@
                 {% endif %}
               </div>
               <p class="font-sans text-[10px] text-[var(--text-secondary)] mt-1">Member of <span class="font-semibold text-purple-400">{{ listing.university }}</span></p>
+              {% if current_user.is_authenticated and current_user.id != listing.seller_id %}
+              <div class="mt-1">
+                {% with target_type='listing', target_id=listing.id, target_label='Listing' %}
+                  {% include 'reports/report_modal.html' %}
+                {% endwith %}
+              </div>
+              {% endif %}
             </div>
           </div>
         </div>

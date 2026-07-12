@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}Upgrade to Seller - Campus Plug{% endblock %}
+
+{% block content %}
+<section class="max-w-md mx-auto w-full px-4 py-8 relative z-10 flex flex-col items-center">
+
+  <div data-aos="fade-up" class="w-full bg-[var(--bg-secondary)]/80 backdrop-blur-sm border border-[var(--color-border)] rounded-2xl shadow-xl relative overflow-hidden">
+    <div class="absolute -top-12 -right-12 w-36 h-36 bg-amber-500/10 rounded-full filter blur-2xl"></div>
+    <div class="absolute -bottom-12 -left-12 w-36 h-36 bg-purple-500/10 rounded-full filter blur-2xl"></div>
+
+    <div class="relative z-10 text-center pt-6 px-6 pb-1">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-3 shadow-lg">
+        <i data-lucide="store" class="w-6 h-6 text-white"></i>
+      </div>
+      <h2 class="font-display font-extrabold text-2xl text-[var(--text-primary)] tracking-tight">Become a Seller</h2>
+      <p class="font-sans text-xs text-[var(--text-secondary)] mt-1">List items in the marketplace and reach students across Ghana</p>
+    </div>
+
+    <div class="relative z-10 px-6 py-5 flex flex-col gap-4">
+      <div class="flex items-start gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
+        <i data-lucide="package" class="w-5 h-5 text-amber-400 shrink-0 mt-0.5"></i>
+        <div>
+          <span class="block text-xs font-bold text-[var(--text-primary)]">Sell Items in Marketplace</span>
+          <span class="block text-[10px] text-[var(--text-secondary)] mt-0.5">List electronics, textbooks, furniture, and more. Set your price in GHS.</span>
+        </div>
+      </div>
+      <div class="flex items-start gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
+        <i data-lucide="sparkles" class="w-5 h-5 text-amber-400 shrink-0 mt-0.5"></i>
+        <div>
+          <span class="block text-xs font-bold text-[var(--text-primary)]">Create Showcases</span>
+          <span class="block text-[10px] text-[var(--text-secondary)] mt-0.5">Post your work, products, or projects in a dedicated portfolio showcase.</span>
+        </div>
+      </div>
+      <div class="flex items-start gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
+        <i data-lucide="briefcase" class="w-5 h-5 text-amber-400 shrink-0 mt-0.5"></i>
+        <div>
+          <span class="block text-xs font-bold text-[var(--text-primary)]">Submit Freelance Proposals</span>
+          <span class="block text-[10px] text-[var(--text-secondary)] mt-0.5">Apply for freelance gigs posted by other campus users.</span>
+        </div>
+      </div>
+      <div class="flex items-start gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
+        <i data-lucide="map" class="w-5 h-5 text-amber-400 shrink-0 mt-0.5"></i>
+        <div>
+          <span class="block text-xs font-bold text-[var(--text-primary)]">Appear on Seller Map</span>
+          <span class="block text-[10px] text-[var(--text-secondary)] mt-0.5">Get discovered by buyers browsing sellers in your area.</span>
+        </div>
+      </div>
+      <div class="flex items-start gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
+        <i data-lucide="trending-up" class="w-5 h-5 text-amber-400 shrink-0 mt-0.5"></i>
+        <div>
+          <span class="block text-xs font-bold text-[var(--text-primary)]">Climb the Leaderboard</span>
+          <span class="block text-[10px] text-[var(--text-secondary)] mt-0.5">Top sellers earn badges and visibility across the platform.</span>
+        </div>
+      </div>
+
+      <form action="{{ url_for('auth.upgrade_seller') }}" method="POST" class="mt-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-sans font-bold text-xs shadow-md hover:shadow-lg hover:scale-[1.02] transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+          <i data-lucide="store" class="w-4 h-4"></i> Upgrade to Seller — Free
+        </button>
+      </form>
+
+      <a href="{{ url_for('auth.settings') }}" class="text-center text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">Cancel — keep regular account</a>
+    </div>
+  </div>
+
+</section>
+{% endblock %}

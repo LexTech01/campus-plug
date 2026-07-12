@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, g
 from flask_login import login_required, current_user
 from models import db, User, Message, Listing, Gig, Notification
 from sqlalchemy import or_, and_
@@ -11,62 +11,86 @@ chat_bp = Blueprint('chat', __name__)
 @chat_bp.route('/inbox')
 @login_required
 def inbox():
-    # Fetch all messages involving the current user
-    all_msgs = Message.query.filter(
+    from sqlalchemy import func, desc as sql_desc
+    
+    # Use a single efficient query: get the latest message per conversation
+    # Subquery: max message id per conversation pair
+    latest_per_thread = db.session.query(
+        func.max(Message.id).label('max_id')
+    ).filter(
         or_(Message.sender_id == current_user.id, Message.recipient_id == current_user.id)
-    ).order_by(Message.created_at.desc()).limit(500).all()
+    ).group_by(
+        db.case(
+            (Message.sender_id < Message.recipient_id, 
+             db.cast(Message.sender_id, db.String) + ':' + db.cast(Message.recipient_id, db.String)),
+            else_=db.cast(Message.recipient_id, db.String) + ':' + db.cast(Message.sender_id, db.String)
+        ),
+        Message.listing_id,
+        Message.gig_id
+    ).subquery()
     
-    unique_conversations = {} # Key: (other_user_id, context_type, context_id)
+    latest_msgs = Message.query.filter(
+        Message.id.in_(db.session.query(latest_per_thread.c.max_id))
+    ).order_by(Message.created_at.desc()).limit(100).all()
     
-    for m in all_msgs:
+    # Batch-load all referenced users
+    other_user_ids = set()
+    for m in latest_msgs:
+        other_user_ids.add(m.recipient_id if m.sender_id == current_user.id else m.sender_id)
+    users_map = {u.id: u for u in User.query.filter(User.id.in_(other_user_ids)).all()} if other_user_ids else {}
+    
+    # Batch-load conversation unread counts
+    unread_counts = {}
+    if latest_msgs:
+        unread_rows = db.session.query(
+            Message.sender_id, Message.recipient_id, Message.listing_id, Message.gig_id,
+            func.count(Message.id).label('cnt')
+        ).filter(
+            Message.recipient_id == current_user.id,
+            Message.is_read == False,
+            or_(Message.sender_id.in_(other_user_ids), Message.sender_id == current_user.id)
+        ).group_by(
+            Message.sender_id, Message.recipient_id, Message.listing_id, Message.gig_id
+        ).all()
+        for row in unread_rows:
+            other_id = row.sender_id if row.recipient_id == current_user.id else row.recipient_id
+            context = 'listing' if row.listing_id else ('gig' if row.gig_id else 'general')
+            unread_counts[(other_id, context, row.listing_id or row.gig_id)] = row.cnt
+    
+    threads = []
+    for m in latest_msgs:
         other_user_id = m.recipient_id if m.sender_id == current_user.id else m.sender_id
+        other_user = users_map.get(other_user_id)
+        if not other_user:
+            continue
         context_type = 'listing' if m.listing_id else ('gig' if m.gig_id else 'general')
         context_id = m.listing_id if m.listing_id else (m.gig_id if m.gig_id else None)
         
-        key = (other_user_id, context_type, context_id)
-        if key not in unique_conversations:
-            unique_conversations[key] = []
-        unique_conversations[key].append(m)
-        
-    threads = []
-    for (other_user_id, context_type, context_id), msgs in unique_conversations.items():
-        other_user = User.query.get(other_user_id)
-        if not other_user:
-            continue
-            
-        # Get latest message
-        last_msg = msgs[0] # Order is desc, so first is latest
-        
-        # Count unread messages in this thread
-        unread_count = sum(1 for m in msgs if m.recipient_id == current_user.id and not m.is_read)
-        
-        # Get context title
         context_title = ""
         context_link = ""
         if context_type == 'listing' and context_id:
-            listing = Listing.query.get(context_id)
+            listing = db.session.get(Listing, context_id)
             if listing:
                 context_title = f"Listing: {listing.title}"
                 context_link = url_for('marketplace.detail', listing_id=listing.id)
         elif context_type == 'gig' and context_id:
-            gig = Gig.query.get(context_id)
+            gig = db.session.get(Gig, context_id)
             if gig:
                 context_title = f"Gig: {gig.title}"
                 context_link = url_for('freelance.detail', gig_id=gig.id)
-                
+        
+        unread_count = unread_counts.get((other_user_id, context_type, context_id), 0)
+        
         threads.append({
             'other_user': other_user,
             'context_type': context_type,
             'context_id': context_id,
             'context_title': context_title,
             'context_link': context_link,
-            'last_message': last_msg,
+            'last_message': m,
             'unread_count': unread_count
         })
         
-    # Sort threads by latest message timestamp
-    threads.sort(key=lambda t: t['last_message'].created_at if t['last_message'] else datetime.min, reverse=True)
-    
     # Check if we want to auto-redirect to initiate a specific chat via query args
     with_user_id = request.args.get('with_user', type=int)
     init_context_type = request.args.get('context_type', '')

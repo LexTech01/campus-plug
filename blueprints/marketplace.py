@@ -1,8 +1,9 @@
 import os
+from datetime import datetime, timedelta
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
 from flask_login import login_required, current_user
 from models import db, User, Listing, Offer, CATEGORIES, CONDITIONS, DELIVERY_POLICIES, UNIVERSITIES, Notification
-from utils import sanitize_plain_text
+from utils import sanitize_plain_text, check_account_age, rate_limit
 from image_utils import allowed_file, validate_image_content, validate_image_size, save_upload
 
 marketplace_bp = Blueprint('marketplace', __name__)
@@ -64,10 +65,25 @@ def browse():
 
 @marketplace_bp.route('/marketplace/create', methods=['GET', 'POST'])
 @login_required
+@rate_limit('create_listing', max_attempts=3, window=3600)
 def create_listing():
     if current_user.account_type not in ('seller', 'admin'):
-        flash('Only seller accounts can create marketplace listings. Upgrade in Settings to start selling.', 'warning')
-        return redirect(url_for('marketplace.browse'))
+        flash('Only seller accounts can create marketplace listings.', 'warning')
+        return redirect(url_for('auth.upgrade_seller'))
+
+    if not current_user.email_verified:
+        flash('Please verify your email address before creating listings.', 'warning')
+        return redirect(url_for('auth.settings'))
+
+    if check_account_age(24):
+        flash('Your account must be at least 24 hours old before creating listings.', 'warning')
+        return redirect(url_for('index'))
+
+    if current_user.created_at and (datetime.utcnow() - current_user.created_at).days < 7:
+        active_count = Listing.query.filter_by(seller_id=current_user.id, status='active').count()
+        if active_count >= 3:
+            flash('New accounts can create a maximum of 3 active listings during the first 7 days.', 'warning')
+            return redirect(url_for('marketplace.browse'))
 
     errors = {}
     form_data = {}
@@ -551,8 +567,8 @@ def delete_listing(listing_id):
 @login_required
 def my_listings():
     if current_user.account_type not in ('seller', 'admin'):
-        flash('Only seller accounts can view listings. Upgrade in Settings to start selling.', 'warning')
-        return redirect(url_for('index'))
+        flash('Only seller accounts can view your listings.', 'warning')
+        return redirect(url_for('auth.upgrade_seller'))
 
     # Fetch all user listings active or sold, exclude deleted
     user_listings = Listing.query.filter(

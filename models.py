@@ -334,13 +334,13 @@ class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     buyer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     seller_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    context_type = db.Column(db.String(20), nullable=False) # 'listing' or 'gig'
+    context_type = db.Column(db.String(20), nullable=False, index=True) # 'listing' or 'gig'
     context_id = db.Column(db.Integer, nullable=False, index=True)
     
     # Optional direct references for SQLAlchemy compatibility with listing / gig templates
-    listing_id = db.Column(db.Integer, db.ForeignKey('listings.id'), nullable=True)
-    gig_id = db.Column(db.Integer, db.ForeignKey('gigs.id'), nullable=True)
-    proposal_id = db.Column(db.Integer, db.ForeignKey('proposals.id'), nullable=True)
+    listing_id = db.Column(db.Integer, db.ForeignKey('listings.id'), nullable=True, index=True)
+    gig_id = db.Column(db.Integer, db.ForeignKey('gigs.id'), nullable=True, index=True)
+    proposal_id = db.Column(db.Integer, db.ForeignKey('proposals.id'), nullable=True, index=True)
     
     amount = db.Column(db.Float, nullable=False)              # The full amount buyer paid/pays (in GHS)
     platform_fee = db.Column(db.Float, nullable=False)        # Always 10%
@@ -354,9 +354,9 @@ class Transaction(db.Model):
     bulk_items = db.Column(db.JSON, nullable=True)  # [{"listing_id": N, "title": "...", "price": N, "quantity": N}, ...]
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
-    paid_at = db.Column(db.DateTime, nullable=True)
-    released_at = db.Column(db.DateTime, nullable=True)
-    auto_release_at = db.Column(db.DateTime, nullable=True)
+    paid_at = db.Column(db.DateTime, nullable=True, index=True)
+    released_at = db.Column(db.DateTime, nullable=True, index=True)
+    auto_release_at = db.Column(db.DateTime, nullable=True, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
@@ -406,12 +406,12 @@ class Review(db.Model):
     __tablename__ = 'reviews'
     
     id = db.Column(db.Integer, primary_key=True)
-    transaction_id = db.Column(db.Integer, db.ForeignKey('transactions.id'), nullable=True)
-    reviewer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    reviewee_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    transaction_id = db.Column(db.Integer, db.ForeignKey('transactions.id'), nullable=True, index=True)
+    reviewer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    reviewee_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     rating = db.Column(db.Integer, nullable=False)  # 1 to 5 Stars
     comment = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     
     # Relationships
     reviewer = db.relationship('User', foreign_keys=[reviewer_id], back_populates='reviews_authored')
@@ -423,7 +423,7 @@ class Notification(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    notification_type = db.Column(db.String(50), nullable=False) # e.g., 'proposal', 'accepted', 'message', 'sold'
+    notification_type = db.Column(db.String(50), nullable=False, index=True) # e.g., 'proposal', 'accepted', 'message', 'sold'
     message = db.Column(db.Text, nullable=False)
     link = db.Column(db.String(255), nullable=True)
     is_read = db.Column(db.Boolean, default=False, index=True)
@@ -464,7 +464,28 @@ class AuditLog(db.Model):
 def log_audit(user_id, action, details=None, ip_address=None):
     log = AuditLog(user_id=user_id, action=action, details=details, ip_address=ip_address)
     db.session.add(log)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+class Report(db.Model):
+    __tablename__ = 'reports'
+
+    id = db.Column(db.Integer, primary_key=True)
+    reporter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    target_type = db.Column(db.String(20), nullable=False, index=True)
+    target_id = db.Column(db.Integer, nullable=False, index=True)
+    reason = db.Column(db.String(50), nullable=False)
+    details = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default='pending', index=True)
+    resolved_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    resolved_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    reporter = db.relationship('User', foreign_keys=[reporter_id])
+    resolver = db.relationship('User', foreign_keys=[resolved_by])
+
 
 class ShowcasePost(db.Model):
     __tablename__ = 'showcase_posts'
@@ -494,9 +515,13 @@ class ShowcaseLike(db.Model):
     __tablename__ = 'showcase_likes'
     
     id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('showcase_posts.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('showcase_posts.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.Index('ix_showcase_like_post_user', 'post_id', 'user_id'),
+    )
     
     # Relationships
     post = db.relationship('ShowcasePost', back_populates='likes')
@@ -506,10 +531,14 @@ class ShowcaseComment(db.Model):
     __tablename__ = 'showcase_comments'
     
     id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('showcase_posts.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('showcase_posts.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        db.Index('ix_showcase_comment_post', 'post_id', 'created_at'),
+    )
     
     # Relationships
     post = db.relationship('ShowcasePost', back_populates='comments')

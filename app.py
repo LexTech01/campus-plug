@@ -9,7 +9,7 @@ from pathlib import Path
 from logging.handlers import RotatingFileHandler
 
 from flask import Flask, render_template, redirect, url_for, flash, jsonify, request, send_from_directory, g
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user, logout_user
 try:
     from flask_migrate import Migrate, upgrade
     HAS_MIGRATE = True
@@ -34,6 +34,11 @@ def load_user(user_id):
     if user and user.is_suspended:
         return None
     return user
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    flash('Please log in to access this page.', 'warning')
+    return redirect(url_for('auth.login'))
 
 def create_app():
     app = Flask(__name__)
@@ -72,10 +77,27 @@ def create_app():
     app.logger.setLevel(logging.INFO)
     app.logger.info('Campus Plug starting')
 
-    # Correlation ID per request
+    # Request-level timer for slow query detection
     @app.before_request
-    def assign_correlation_id():
+    def start_request_timer():
         g.correlation_id = request.headers.get('X-Correlation-ID', str(uuid.uuid4()))
+        g.request_start = time.time()
+        g.db_queries = 0
+
+    @app.after_request
+    def log_slow_requests(response):
+        duration = time.time() - g.get('request_start', time.time())
+        if duration > 1.0:
+            app.logger.warning(f'SLOW REQUEST: {request.method} {request.path} took {duration:.2f}s ({g.get("db_queries", 0)} db queries)')
+        return response
+
+    # Check for suspended users on every request
+    @app.before_request
+    def check_suspended():
+        if current_user.is_authenticated and current_user.is_suspended:
+            logout_user()
+            flash('Your account has been suspended by an administrator.', 'danger')
+            return redirect(url_for('auth.login'))
 
     @app.after_request
     def log_request(response):
@@ -123,6 +145,7 @@ def create_app():
     from blueprints.admin import admin_bp
     from blueprints.map import map_bp
     from blueprints.cart import cart_bp
+    from blueprints.reports import reports_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(marketplace_bp)
@@ -132,35 +155,52 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(map_bp)
     app.register_blueprint(cart_bp)
+    app.register_blueprint(reports_bp)
 
     # Custom context processors/filters for Jinja2
     @app.context_processor
     def inject_globals():
-        from models import UNIVERSITIES, CATEGORIES, CONDITIONS, DELIVERY_POLICIES, MOMO_PROVIDERS, GIG_CATEGORIES, Notification, Message, CartItem
+        from models import UNIVERSITIES, CATEGORIES, CONDITIONS, DELIVERY_POLICIES, MOMO_PROVIDERS, GIG_CATEGORIES
         from flask_login import current_user
-        unread_notifications_count = 0
-        unread_messages_count = 0
-        recent_notifications = []
-        cart_count = 0
-        if current_user.is_authenticated:
-            unread_notifications_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
-            unread_messages_count = Message.query.filter_by(recipient_id=current_user.id, is_read=False).count()
-            recent_notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).limit(5).all()
-            cart_count = CartItem.query.filter_by(buyer_id=current_user.id).count()
-        return {
+        ctx = {
             'UNIVERSITIES': UNIVERSITIES,
             'CATEGORIES': CATEGORIES,
             'CONDITIONS': CONDITIONS,
             'DELIVERY_POLICIES': DELIVERY_POLICIES,
             'MOMO_PROVIDERS': MOMO_PROVIDERS,
             'GIG_CATEGORIES': GIG_CATEGORIES,
-            'unread_notifications_count': unread_notifications_count,
-            'unread_messages_count': unread_messages_count,
-            'recent_notifications': recent_notifications,
-            'cart_count': cart_count,
             'SUPPORT_EMAIL': 'campusplug30@gmail.com',
             'cache_buster': int(time.time()),
         }
+        if current_user.is_authenticated:
+            from models import Notification, Message, CartItem
+            from utils import cache_get, cache_set
+            uid = current_user.id
+            n_count_key = f'notif_count:{uid}'
+            m_count_key = f'msg_count:{uid}'
+            c_count_key = f'cart_count:{uid}'
+            notif_key = f'notif_recent:{uid}'
+            n_count = cache_get(n_count_key)
+            if n_count is None:
+                n_count = Notification.query.filter_by(user_id=uid, is_read=False).count()
+                cache_set(n_count_key, n_count, 10)
+            ctx['unread_notifications_count'] = n_count
+            m_count = cache_get(m_count_key)
+            if m_count is None:
+                m_count = Message.query.filter_by(recipient_id=uid, is_read=False).count()
+                cache_set(m_count_key, m_count, 10)
+            ctx['unread_messages_count'] = m_count
+            c_count = cache_get(c_count_key)
+            if c_count is None:
+                c_count = CartItem.query.filter_by(buyer_id=uid).count()
+                cache_set(c_count_key, c_count, 10)
+            ctx['cart_count'] = c_count
+            recent = cache_get(notif_key)
+            if recent is None:
+                recent = Notification.query.filter_by(user_id=uid).order_by(Notification.created_at.desc()).limit(5).all()
+                cache_set(notif_key, [{'id': n.id, 'message': n.message, 'type': n.notification_type, 'is_read': n.is_read, 'created_at': n.created_at.isoformat(), 'link': n.link} for n in recent], 10)
+            ctx['recent_notifications'] = recent
+        return ctx
 
     # Root route - Landing page
     @app.route('/')
@@ -180,8 +220,12 @@ def create_app():
     def leaderboard():
         from models import Transaction, TransactionStatus, Review, Listing
         from sqlalchemy import func
+        from utils import cache_get, cache_set
         
-        # Aggregate subqueries — 3 queries total instead of 1 + 3N
+        cached = cache_get('leaderboard')
+        if cached is not None:
+            return render_template('leaderboard.html', leaderboard=cached)
+        
         sales_agg = db.session.query(
             Transaction.seller_id,
             func.count(Transaction.id).label('completed_sales'),
@@ -241,6 +285,7 @@ def create_app():
         for i, entry in enumerate(leaderboard_data):
             entry['rank'] = i + 1
         
+        cache_set('leaderboard', leaderboard_data, 60)
         return render_template('leaderboard.html', leaderboard=leaderboard_data)
 
     # Error Handlers
@@ -265,16 +310,41 @@ def create_app():
     def internal_server_error(e):
         return render_template('errors/500.html'), 500
 
-    # Favicon
+    # Serve static files with cache headers
     @app.route('/favicon.ico')
     def favicon():
-        return send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+        response = send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+        response.headers['Cache-Control'] = 'public, max-age=86400, immutable'
+        return response
 
-    # Health check
+    @app.route('/static/<path:filename>')
+    def static_files(filename):
+        response = send_from_directory(app.static_folder, filename)
+        ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+        max_age = 31536000 if ext in ('css', 'js', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'ico', 'woff2') else 3600
+        response.headers['Cache-Control'] = f'public, max-age={max_age}, immutable'
+        return response
+
+    # Health check with detailed metrics
     @app.route('/health')
     def health():
+        import platform
+        from datetime import datetime as dt_module
         try:
+            start = time.time()
             db.session.execute(db.text('SELECT 1'))
+            db_latency = round((time.time() - start) * 1000, 1)
+            r = None
+            redis_latency = None
+            try:
+                from utils import get_redis
+                r_start = time.time()
+                r = get_redis()
+                if r:
+                    r.ping()
+                    redis_latency = round((time.time() - r_start) * 1000, 1)
+            except Exception:
+                pass
             _lock = Path(tempfile.gettempdir()) / 'campus_plug_autorelease'
             _now = time.time()
             _last = float(_lock.read_text().strip()) if _lock.exists() else 0
@@ -285,22 +355,47 @@ def create_app():
                     auto_release_expired_transactions()
                 except Exception as ae:
                     app.logger.error(f"Auto-release: {ae}")
-            return jsonify({'status': 'healthy', 'database': 'ok'})
-        except Exception:
-            return jsonify({'status': 'unhealthy', 'database': 'connection failed'}), 500
+            memory_mb = 0
+            try:
+                import subprocess
+                result = subprocess.run(['ps', '-o', 'rss=', '-p', str(os.getpid())], capture_output=True, text=True, timeout=2)
+                if result.stdout.strip():
+                    memory_mb = round(int(result.stdout.strip()) / 1024, 1)
+            except Exception:
+                pass
+            return jsonify({
+                'status': 'healthy',
+                'database': {'status': 'ok', 'latency_ms': db_latency},
+                'redis': {'status': 'connected' if r else 'unavailable', 'latency_ms': redis_latency},
+                'uptime': dt_module.utcnow().isoformat(),
+                'python': platform.python_version(),
+                'memory_mb': memory_mb,
+            })
+        except Exception as e:
+            return jsonify({'status': 'unhealthy', 'database': {'status': 'error', 'message': str(e)}}), 500
 
     # Create Database and Seed if empty
     with app.app_context():
         if os.environ.get('SKIP_DB_CREATE') != '1':
+            tables_created = False
             if HAS_MIGRATE and upgrade:
                 try:
                     upgrade()
+                    tables_created = True
                 except Exception as exc:
                     app.logger.error("Migration failed, falling back to create_all: %s", exc)
                     db.create_all()
+                    tables_created = True
+                    try:
+                        from flask_migrate import stamp
+                        stamp()
+                    except Exception:
+                        pass
             else:
                 db.create_all()
-            if app.config.get('DEBUG', False):
+                tables_created = True
+
+            if app.config.get('DEBUG', False) and tables_created:
                 seed_data()
 
     return app
@@ -400,7 +495,7 @@ def seed_data():
 
     # Print generated dev credentials so developer can log in locally (only when seeding in debug)
     try:
-        print(f"Seeded dev passwords: STUDENT_PASSWORD={_password} ADMIN_PASSWORD={admin_password}")
+        print(f"Seeded dev credentials: STUDENT_PASSWORD=<hidden> ADMIN_PASSWORD=<hidden>")
     except Exception:
         pass
 

@@ -2,7 +2,7 @@ from functools import wraps
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort
 from flask_login import login_required, current_user
 from sqlalchemy import update as sa_update, func
-from models import db, User, Listing, Gig, Transaction, TransactionStatus, TransactionLog, Review, Notification, AdminLog, UNIVERSITIES
+from models import db, User, Listing, Gig, Transaction, TransactionStatus, TransactionLog, Review, Notification, AdminLog, Report, UNIVERSITIES
 from datetime import datetime
 from blueprints.payments import create_paystack_transfer_recipient, initiate_paystack_transfer, initiate_paystack_refund, prompt_reviews_for_transaction
 
@@ -448,3 +448,77 @@ def transactions_list():
     transactions = pagination.items
     
     return render_template('admin/transactions.html', transactions=transactions, pagination=pagination, search=search)
+
+
+@admin_bp.route('/admin/reports')
+@login_required
+@admin_required
+def reports_list():
+    status_filter = request.args.get('status', 'pending')
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+
+    query = Report.query
+    if status_filter in ('pending', 'resolved', 'dismissed'):
+        query = query.filter(Report.status == status_filter)
+
+    pagination = query.order_by(Report.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    reports = pagination.items
+
+    return render_template('admin/reports.html', reports=reports, pagination=pagination, status_filter=status_filter)
+
+
+@admin_bp.route('/admin/reports/<int:report_id>/resolve', methods=['POST'])
+@login_required
+@admin_required
+def resolve_report(report_id):
+    report = Report.query.get_or_404(report_id)
+    action = request.form.get('action')
+
+    if action not in ('resolved', 'dismissed'):
+        flash('Invalid action.', 'danger')
+        return redirect(url_for('admin.reports_list'))
+
+    if report.status != 'pending':
+        flash('This report has already been resolved.', 'warning')
+        return redirect(url_for('admin.reports_list'))
+
+    report.status = action
+    report.resolved_by = current_user.id
+    report.resolved_at = datetime.utcnow()
+
+    admin_log = AdminLog(
+        admin_id=current_user.id,
+        action=f'report_{action}',
+        target_id=report.id,
+        note=f"Report #{report.id} ({report.target_type} #{report.target_id}) marked as {action}.",
+        created_at=datetime.utcnow()
+    )
+    db.session.add(admin_log)
+    db.session.commit()
+
+    flash(f'Report #{report.id} marked as {action}.', 'success')
+    return redirect(url_for('admin.reports_list'))
+
+
+@admin_bp.route('/admin/users/<int:user_id>/verify', methods=['POST'])
+@login_required
+@admin_required
+@prevent_admin_target
+def toggle_verify_user(user_id):
+    user = User.query.get_or_404(user_id)
+    user.is_verified = not user.is_verified
+    action = 'verified' if user.is_verified else 'unverified'
+
+    admin_log = AdminLog(
+        admin_id=current_user.id,
+        action=f'{action}_user',
+        target_id=user.id,
+        note=f"{current_user.full_name} {action} {user.full_name} ({user.email}).",
+        created_at=datetime.utcnow()
+    )
+    db.session.add(admin_log)
+    db.session.commit()
+
+    flash(f"User {user.full_name} has been {action}.", "success")
+    return redirect(url_for('admin.user_detail', user_id=user.id))

@@ -49,6 +49,12 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       Transactions
     </a>
+
+    <p class="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)] px-3 mt-6 mb-2">Moderation</p>
+    <a href="{{ url_for('admin.reports_list') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm mb-0.5 {% if request.endpoint == 'admin.reports_list' %}bg-purple-500/10 text-purple-400 font-bold{% else %}text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]{% endif %} transition-all-smooth">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+      Reports
+    </a>
   </nav>
 
   <div class="p-3 border-t border-[var(--color-border)]">

@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, abort, jsonify
 from flask_login import login_required, current_user
 from models import db, User, Gig, Proposal, Notification, ShowcasePost, ShowcaseLike, ShowcaseComment, GIG_CATEGORIES, UNIVERSITIES
-from datetime import datetime
-from utils import sanitize_plain_text
+from datetime import datetime, timedelta
+from utils import sanitize_plain_text, check_account_age, rate_limit
 from image_utils import allowed_file, validate_image_content, validate_image_size, save_upload
 
 freelance_bp = Blueprint('freelance', __name__)
@@ -56,9 +56,23 @@ def browse():
 
 @freelance_bp.route('/freelance/create', methods=['GET', 'POST'])
 @login_required
+@rate_limit('create_gig', max_attempts=2, window=3600)
 def create_gig():
+    if not current_user.email_verified:
+        flash('Please verify your email address before posting a gig.', 'warning')
+        return redirect(url_for('auth.settings'))
+
+    if check_account_age(24):
+        flash('Your account must be at least 24 hours old before posting a gig.', 'warning')
+        return redirect(url_for('index'))
+
+    if current_user.created_at and (datetime.utcnow() - current_user.created_at).days < 7:
+        active_gigs = Gig.query.filter_by(client_id=current_user.id, status='open').count()
+        if active_gigs >= 2:
+            flash('New accounts can post a maximum of 2 open gigs during the first 7 days.', 'warning')
+            return redirect(url_for('freelance.browse'))
+
     errors = {}
-    form_data = {}
     
     if request.method == 'POST':
         title = sanitize_plain_text(request.form.get('title', '').strip())
@@ -189,9 +203,13 @@ def detail(gig_id):
             return redirect(url_for('freelance.detail', gig_id=gig.id))
 
         if current_user.account_type not in ('seller', 'admin'):
-            flash('Only seller accounts can submit proposals. Upgrade in Profile Settings.', 'warning')
-            return redirect(url_for('freelance.detail', gig_id=gig.id))
-            
+            flash('Only seller accounts can submit proposals.', 'warning')
+            return redirect(url_for('auth.upgrade_seller'))
+
+        if not current_user.email_verified:
+            flash('Please verify your email address before submitting proposals.', 'warning')
+            return redirect(url_for('auth.settings'))
+
         if gig.status != 'open':
             flash('Error: This gig is no longer accepting bids.', 'danger')
             return redirect(url_for('freelance.detail', gig_id=gig.id))
@@ -389,10 +407,19 @@ def showcase_detail(post_id):
 
 @freelance_bp.route('/freelance/showcases/create', methods=['GET', 'POST'])
 @login_required
+@rate_limit('create_showcase', max_attempts=2, window=3600)
 def create_showcase():
     if current_user.account_type not in ('seller', 'admin'):
-        flash('Only seller accounts can create showcase posts. Upgrade in Profile Settings.', 'warning')
-        return redirect(url_for('freelance.showcases_list'))
+        flash('Only seller accounts can create showcase posts.', 'warning')
+        return redirect(url_for('auth.upgrade_seller'))
+
+    if not current_user.email_verified:
+        flash('Please verify your email address before creating a showcase post.', 'warning')
+        return redirect(url_for('auth.settings'))
+
+    if check_account_age(24):
+        flash('Your account must be at least 24 hours old before creating a showcase post.', 'warning')
+        return redirect(url_for('index'))
 
     errors = {}
     form_data = {}
