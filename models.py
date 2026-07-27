@@ -23,7 +23,7 @@ UNIVERSITIES = [
     'University of Professional Studies Accra (UPSA)',
     'Ghana Communication Technology University (GCTU)',
     'Other',
-    'External / Business'
+    'External Business'
 ]
 
 CATEGORIES = [

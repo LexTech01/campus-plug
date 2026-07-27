@@ -19,7 +19,7 @@ class Config:
 
     RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
 
-    APP_URL = os.environ.get('APP_URL', 'http://127.0.0.1:5000')
+    APP_URL = os.environ.get('APP_URL') or os.environ.get('RENDER_EXTERNAL_URL', 'http://127.0.0.1:5000')
 
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
@@ -29,24 +29,27 @@ class Config:
 
     @staticmethod
     def validate(production=False):
-        errors = []
+        fatal = []
+        warnings = []
         if not Config.SECRET_KEY or Config.SECRET_KEY == 'change-me-in-production':
-            errors.append('SECRET_KEY is not set. Generate one: python3 -c "import secrets; print(secrets.token_hex(32))"')
-        if not Config.PAYSTACK_SECRET_KEY or not Config.PAYSTACK_PUBLIC_KEY:
-            errors.append('PAYSTACK_SECRET_KEY and PAYSTACK_PUBLIC_KEY must be set')
-        if not Config.RESEND_API_KEY:
-            errors.append('RESEND_API_KEY is not set — password resets and email notifications will fail silently')
+            fatal.append('SECRET_KEY is not set. Generate one: python3 -c "import secrets; print(secrets.token_hex(32))"')
         if production:
             db_url = os.environ.get('DATABASE_URL', '').strip()
             if not db_url:
-                errors.append('DATABASE_URL is not set')
+                fatal.append('DATABASE_URL is not set')
+        if not Config.PAYSTACK_SECRET_KEY or not Config.PAYSTACK_PUBLIC_KEY:
+            warnings.append('PAYSTACK_SECRET_KEY and PAYSTACK_PUBLIC_KEY not set — payments will fail')
+        if not Config.RESEND_API_KEY:
+            warnings.append('RESEND_API_KEY not set — email notifications will fail silently')
         import sys
-        if errors:
-            print("CRITICAL CONFIGURATION ERRORS:", file=sys.stderr)
-            for err in errors:
+        if fatal:
+            print("FATAL CONFIGURATION ERRORS:", file=sys.stderr)
+            for err in fatal:
                 print(f"  - {err}", file=sys.stderr)
             sys.exit(1)
-        return errors
+        for w in warnings:
+            print(f"WARNING: {w}", file=sys.stderr)
+        return warnings
 
 
 class DevelopmentConfig(Config):
